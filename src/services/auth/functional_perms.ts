@@ -29,3 +29,12 @@ export const FP_READ_API_DOCUMENTATION = await registerFunctionalPermission(getD
 const FP_MANAGE_CONFIGURATION_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_MANAGE_CONFIGURATION, description: "Permitted to view and edit application configuration entries.", group: "Admin" };
 export const FP_MANAGE_CONFIGURATION = await registerFunctionalPermission(getDatabaseConnection(), FP_MANAGE_CONFIGURATION_DEF) satisfies FunctionalPermissionType;
 
+const FP_PROLONG_API_KEYS_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_PROLONG_API_KEYS, description: "Permitted to prolong, disable, delete and modify API key metadata/permissions.", group: "Admin" };
+export const FP_PROLONG_API_KEYS = await registerFunctionalPermission(getDatabaseConnection(), FP_PROLONG_API_KEYS_DEF) satisfies FunctionalPermissionType;
+
+const FP_CREATE_API_KEYS_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_CREATE_API_KEYS, description: "Permitted to create API keys.", group: "Admin" };
+export const FP_CREATE_API_KEYS = await registerFunctionalPermission(getDatabaseConnection(), FP_CREATE_API_KEYS_DEF) satisfies FunctionalPermissionType;
+
+const FP_VIEW_API_KEYS_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_VIEW_API_KEYS, description: "Permitted to view API keys and their details.", group: "Admin" };
+export const FP_VIEW_API_KEYS = await registerFunctionalPermission(getDatabaseConnection(), FP_VIEW_API_KEYS_DEF) satisfies FunctionalPermissionType;
+

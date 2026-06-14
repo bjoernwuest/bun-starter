@@ -1,13 +1,13 @@
 import { ConfigValueTypes, type ConfigEntryType } from "@/types/ConfigEntry.ts";
 import { TTLMap } from "@/utils/TTLMap.ts";
 import { type DBClient, getDatabaseConnection } from "@/services/database.ts";
-import { getConfigEntriesByKey } from "@/repo/ConfigRepo.ts";
+import { getConfigEntriesByKey, upsertConfigEntry } from "@/repo/ConfigRepo.ts";
 import { devMode } from "@/devmode.ts";
 import * as oidcClient from "openid-client";
-import { getEntraIDClientId, getEntraIDClientSecret, getEntraIDTenantId } from "@/services/EntraIDSync.ts";
+import { getEntraIDClientId, getEntraIDClientSecret, getEntraIDTenantId, getGraphClient, membershipSync } from "@/services/EntraIDSync.ts";
 import { PubSub } from "./pubsub.ts";
 import { type UserType } from "@/types/User.ts";
-import { getGroupIdsAssignedTo, getGroups, getSystemUser, getUsers } from "@/repo/UserRepo.ts";
+import { getGroupIdsAssignedTo, getGroups, getSystemUser, getUsers, upsertUsers } from "@/repo/UserRepo.ts";
 import { type FunctionalPermissionType } from "@/types/FunctionalPermission.ts";
 import {
     getFunctionalPermissions,
@@ -15,6 +15,11 @@ import {
     grantFunctionalPermissionToGroup,
     registerFunctionalPermission,
 } from "@/repo/FunctionalPermissionRepo.ts";
+import {
+    getFunctionalPermissionsOfApiKey,
+    pubsub_ApiKeyPermissionsChanged,
+    validateApiKeySecret,
+} from "@/repo/api_keys.ts";
 import { FunctionalPermissionNames } from "@/ui/auth/functional_permissions.ts";
 
 
@@ -93,7 +98,12 @@ function generateSessionId(): string {
 export const config = {
     cfgRootUserGroup: { domain: "Authentication and Authorization", key: "RootUserGroup", description: "The object identifier of the user group whose members shall have superuser permissions. Superusers have the permission to grant permissions. They do not get any other permission, unless configured otherwise. Other user groups can be granted permissions if required. Thus, this group is meant to bootstrap the permission system.", type: ConfigValueTypes.string, value: undefined, inputFormat: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$", outputFormat: "", editInUI: true, mandatoryForStart: true},
     cfgSessionExpirationInSeconds: { domain: "Authentication and Authorization", key: "SessionExpirationSeconds", description: "The idle lifetime of an interactive session in seconds. Any user interaction resets this timer; once exceeded the user is logged out (default 900).", type: ConfigValueTypes.number, value: undefined, inputFormat: "^[1-9][0-9]*$", outputFormat: "", editInUI: true, mandatoryForStart: false},
+    cfgApiKeyLength: { domain: "Authentication and Authorization", key: "ApiKeyLength", description: "Length of newly generated API keys. Minimum 32, maximum 256. Default 256.", type: ConfigValueTypes.number, value: undefined, inputFormat: "^(3[2-9]|[4-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-6])$", outputFormat: "", editInUI: true, mandatoryForStart: false},
+    cfgApiKeyValidityDays: { domain: "Authentication and Authorization", key: "ApiKeyValidityDays", description: "Default API key validity in days. Minimum 1, maximum 730. Default 90.", type: ConfigValueTypes.number, value: undefined, inputFormat: "^([1-9]|[1-9][0-9]|[1-6][0-9]{2}|7[0-2][0-9]|730)$", outputFormat: "", editInUI: true, mandatoryForStart: false},
 } satisfies Record<string, ConfigEntryType>;
+
+const DEFAULT_API_KEY_LENGTH = 256;
+const DEFAULT_API_KEY_VALIDITY_DAYS = 90;
 
 let sessionTimeOut : undefined | number = undefined;
 async function getSessionTimeOut(db: DBClient): Promise<number> {
@@ -102,6 +112,28 @@ async function getSessionTimeOut(db: DBClient): Promise<number> {
         if (Array.isArray(resp) && (0 < resp.length)) sessionTimeOut = resp[0]!.value as number; else sessionTimeOut = 900;
     }
     return sessionTimeOut;
+}
+
+export async function getApiKeyLength(db: DBClient): Promise<number> {
+    const resp = await getConfigEntriesByKey(db, config.cfgApiKeyLength.domain, config.cfgApiKeyLength.key, { limit: 1 });
+    if (resp.length < 1) {
+        await upsertConfigEntry(db, { ...config.cfgApiKeyLength, value: DEFAULT_API_KEY_LENGTH });
+        return DEFAULT_API_KEY_LENGTH;
+    }
+    const candidate = Number(resp[0]?.value ?? DEFAULT_API_KEY_LENGTH);
+    if (!Number.isFinite(candidate)) return DEFAULT_API_KEY_LENGTH;
+    return Math.min(256, Math.max(32, Math.floor(candidate)));
+}
+
+export async function getApiKeyValidityDays(db: DBClient): Promise<number> {
+    const resp = await getConfigEntriesByKey(db, config.cfgApiKeyValidityDays.domain, config.cfgApiKeyValidityDays.key, { limit: 1 });
+    if (resp.length < 1) {
+        await upsertConfigEntry(db, { ...config.cfgApiKeyValidityDays, value: DEFAULT_API_KEY_VALIDITY_DAYS });
+        return DEFAULT_API_KEY_VALIDITY_DAYS;
+    }
+    const candidate = Number(resp[0]?.value ?? DEFAULT_API_KEY_VALIDITY_DAYS);
+    if (!Number.isFinite(candidate)) return DEFAULT_API_KEY_VALIDITY_DAYS;
+    return Math.min(730, Math.max(1, Math.floor(candidate)));
 }
 
 // ====================================================================================================================
@@ -304,6 +336,7 @@ async function doRefreshSession(db: DBClient, sessionID: string): Promise<boolea
 
 /**
  * Validates a bearer token (JWT) from EntraID using openid-client.
+ * Also checks token expiry to prevent use of expired tokens.
  *
  * @param {DBClient} db - The database client instance used to fetch configuration data.
  * @param {string} token - The bearer token to validate.
@@ -318,15 +351,37 @@ export async function validateBearerToken(db: DBClient, token: string): Promise<
         const result = await oidcClient.tokenIntrospection(discovered, token);
 
         // Check if token is active
+        // TokenIntrospection endpoint will return active: false if token is expired
         if (result.active) {
             return result as Record<string, any>;
         }
 
+        if (devMode) console.warn("Bearer token is inactive (expired or revoked)");
         return undefined;
     } catch (error) {
         if (devMode) console.error("Bearer token validation failed:", error);
         return undefined;
     }
+}
+
+export interface ApiKeyAuthContext {
+    apiKeyIdentifier: string;
+    createdBy: string;
+    claims: Record<string, any>;
+}
+
+export async function validateApiKey(db: DBClient, apiKeySecret: string): Promise<ApiKeyAuthContext | undefined> {
+    const apiKey = await validateApiKeySecret(db, apiKeySecret);
+    if (!apiKey) return undefined;
+    return {
+        apiKeyIdentifier: apiKey.identifier,
+        createdBy: apiKey.createdBy,
+        claims: {
+            oid: apiKey.createdBy,
+            apiKeyIdentifier: apiKey.identifier,
+            authType: "apiKey",
+        },
+    };
 }
 
 interface AuthStartResult {
@@ -453,13 +508,17 @@ export async function finishAuth(db: DBClient, request: Request, _redirectPage: 
         };
     }
 
-    if (!claims.oid || !claims.groups) {
-        if (devMode) console.error("Missing 'oid' or 'groups' claim", { oid: !!claims.oid, groups: !!claims.groups });
+    // CRITICAL: 'oid' is required. 'groups' claim is optional because:
+    // - Microsoft Graph may not include it (not configured in Optional Claims)
+    // - EntraIDSync will fetch groups via Graph API on login (more reliable)
+    // - Fallback: if groups are in token, they can be used for faster sync
+    if (!claims.oid || typeof claims.oid !== "string") {
+        if (devMode) console.error("Missing or invalid 'oid' claim");
         return {
             success: false,
-            redirectUrl: "/login?error=missing_claims",
+            redirectUrl: "/login?error=missing_oid_claim",
             cookies: [],
-            error: "missing_claims",
+            error: "missing_oid_claim",
         };
     }
 
@@ -475,6 +534,44 @@ export async function finishAuth(db: DBClient, request: Request, _redirectPage: 
     await putSession(db, sessionId, session);
 
     const returnTo = getCookie(request, "auth_return_to") || "/";
+
+    // CRITICAL: Synchronize user and group memberships BEFORE returning the session.
+    // This ensures that:
+    // 1. The user exists in the database when getLoggedinUserObject() is called later
+    // 2. Group memberships are synced so Root User Group checks work correctly
+    // 3. Authorization checks have the correct data immediately after login
+    // If sync fails, we fail the login completely rather than proceeding with an incomplete user record.
+    try {
+        await db.transaction(async (tx) => {
+            const oid = typeof claims.oid === "string" ? claims.oid : "";
+            const firstName = typeof claims.given_name === "string" ? claims.given_name : "";
+            const lastName = typeof claims.family_name === "string" ? claims.family_name : "";
+            const email = typeof claims.email === "string"
+                ? claims.email
+                : (typeof claims.preferred_username === "string" ? claims.preferred_username : "");
+
+            const graphClient = getGraphClient(tx);
+            await upsertUsers(tx, [{
+                identifier: oid,
+                firstName,
+                lastName,
+                email,
+                disabled: false
+            }]);
+            await membershipSync(graphClient, tx, [{ identifier: oid }], true);
+        });
+    } catch (syncError) {
+        if (devMode) console.error("Failed to synchronize user and memberships on login:", syncError);
+        // CRITICAL: Fail the login if sync fails. The user must be in the database
+        // for authorization checks to work correctly. Without this, root group membership
+        // checks will silently fail and users without explicit permissions won't have access.
+        return {
+            success: false,
+            redirectUrl: "/login?error=sync_failed",
+            cookies: [],
+            error: "sync_failed",
+        };
+    }
 
     // Redirect to loading page with target path parameter
     const safeReturnTo = returnTo.startsWith("/") ? returnTo : "/";
@@ -574,6 +671,8 @@ export async function getLoggedinUserObject(db: DBClient, idTokenClaims: Record<
 
 // In-memory cache for user functional permissions.
 const userFunctionalPermissionsCache = new TTLMap<string, Set<FunctionalPermissionType>>(900);
+type ApiKeyPermissionCacheEntry = { permissions: FunctionalPermissionType[]; expiresAt: number };
+const apiKeyFunctionalPermissionsCache = new TTLMap<string, ApiKeyPermissionCacheEntry>(24 * 60 * 60);
 // Functional permission for granting permissions to other groups.
 let functionalPermission_Grant: FunctionalPermissionType | undefined = undefined;
 
@@ -587,6 +686,22 @@ export async function init(DBClient: DBClient): Promise<void> {
         const groups = await getGroups(DBClient, [{identifier: rootUserGroup[0]!.value as string}]);
         if (0 < groups?.length) await grantFunctionalPermissionToGroup(DBClient, await getSystemUser(DBClient), groups[0]!, [functionalPermission_Grant]);
     }
+
+    // Ensure optional API key runtime settings are persisted for UI editing.
+    await getApiKeyLength(DBClient);
+    await getApiKeyValidityDays(DBClient);
+}
+
+/**
+ * Helper to track membership synchronization status during login.
+ * Used for debugging and reporting when sync fails silently.
+ * @type {Map<string, {succeeded: boolean; lastAttempt: Date; error?: string}>}
+ * @private
+ */
+const membershipSyncStatus = new Map<string, {succeeded: boolean; lastAttempt: Date; error?: string}>();
+
+export function getMembershipSyncStatus(userId: string): {succeeded: boolean; lastAttempt: Date; error?: string} | undefined {
+    return membershipSyncStatus.get(userId);
 }
 
 /**
@@ -612,6 +727,25 @@ async function isMemberOfRootUserGroup(DBClient: DBClient, user: UserType): Prom
 
 // Clear cached functional permissions when user logs out
 PubSub.subscribe(pubsub_UserAuthLogout, async (session) => { if (session?.idTokenClaims?.oid) userFunctionalPermissionsCache.delete(session.idTokenClaims.oid); });
+PubSub.subscribe(pubsub_ApiKeyPermissionsChanged, (_msg, data) => {
+    const apiKeyIdentifier = (data as { apiKeyIdentifier?: unknown } | undefined)?.apiKeyIdentifier;
+    if (typeof apiKeyIdentifier === "string" && apiKeyIdentifier.length > 0) {
+        apiKeyFunctionalPermissionsCache.delete(apiKeyIdentifier);
+    }
+});
+
+async function getApiKeyPermissions(DBClient: DBClient, apiKeyIdentifier: string): Promise<FunctionalPermissionType[]> {
+    const now = Date.now();
+    const cached = apiKeyFunctionalPermissionsCache.get(apiKeyIdentifier);
+    if (cached && cached.expiresAt > now) return cached.permissions;
+
+    const permissions = await getFunctionalPermissionsOfApiKey(DBClient, apiKeyIdentifier);
+    apiKeyFunctionalPermissionsCache.put(apiKeyIdentifier, {
+        permissions,
+        expiresAt: now + 24 * 60 * 60 * 1000,
+    });
+    return permissions;
+}
 
 /**
  * Retrieves the functional permissions of the currently logged-in user based on the provided tokens.
@@ -621,6 +755,9 @@ PubSub.subscribe(pubsub_UserAuthLogout, async (session) => { if (session?.idToke
  * @return {Promise<FunctionalPermissionType[]>} A promise that resolves to an array of functional permissions for the user.
  */
 export async function getMyFunctionalPermissions(DBClient: DBClient, tokens: Record<string, any>): Promise<FunctionalPermissionType[]> {
+    if (typeof tokens.apiKeyIdentifier === "string" && tokens.apiKeyIdentifier.length > 0) {
+        return await getApiKeyPermissions(DBClient, tokens.apiKeyIdentifier);
+    }
     if (tokens.oid) {
         const user = await getLoggedinUserObject(DBClient, tokens);
         if (await isMemberOfRootUserGroup(DBClient, user)) {
@@ -645,11 +782,14 @@ export async function getMyFunctionalPermissions(DBClient: DBClient, tokens: Rec
  */
 export async function authorize(DBClient: DBClient, tokens: Record<string, any>, permissions: FunctionalPermissionType[] | FunctionalPermissionType): Promise<FunctionalPermissionType[]> {
     if (!permissions || (Array.isArray(permissions) && 0 === permissions.length)) return [];
+    const isApiKeyAuth = typeof tokens.apiKeyIdentifier === "string" && tokens.apiKeyIdentifier.length > 0;
     // Short cut: if user is root user then simply return the requested permissions!
-    try {
-        const user = await getLoggedinUserObject(DBClient, tokens);
-        if (await isMemberOfRootUserGroup(DBClient, user)) return Array.isArray(permissions) ? permissions : [permissions];
-    } catch (_) { /* user not found or no OID — fall through to normal check */ }
+    if (!isApiKeyAuth) {
+        try {
+            const user = await getLoggedinUserObject(DBClient, tokens);
+            if (await isMemberOfRootUserGroup(DBClient, user)) return Array.isArray(permissions) ? permissions : [permissions];
+        } catch (_) { /* user not found or no OID — fall through to normal check */ }
+    }
     const mine = await getMyFunctionalPermissions(DBClient, tokens);
     let result: FunctionalPermissionType[];
     if (Array.isArray(permissions)) {

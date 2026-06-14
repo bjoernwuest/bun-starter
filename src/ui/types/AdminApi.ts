@@ -92,3 +92,48 @@ export type ConfigConflictResponse = {
     currentValue: unknown;
 };
 
+export type ApiKeySummary = {
+    identifier: string;
+    name: string;
+    description: string | null;
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+    expiresAt: string;
+    lastProlongedAt: string | null;
+    lastProlongedBy: string | null;
+    disabled: boolean;
+    disabledAt: string | null;
+    disabledBy: string | null;
+    permissionNames: string[];
+};
+
+export type ApiKeysResponse = {
+    apiKeys: ApiKeySummary[];
+    page: number;
+    pageSize: number;
+    total: number;
+    availablePageSizes: number[];
+    includeDisabled: boolean;
+};
+
+export type ApiKeyDetailResponse = {
+    apiKey: ApiKeySummary;
+    permissionIdentifiers: string[];
+    allPermissions: FunctionalPermissionType[];
+};
+
+export type CreateApiKeyRequest = {
+    name: string;
+    description?: string | null;
+    permissionIdentifiers?: string[];
+};
+
+export type CreateApiKeyResponse = {
+    identifier: string;
+    plainApiKey: string;
+    expiresAt: string;
+    keyLength: number;
+    validityDays: number;
+};
+

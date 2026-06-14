@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
-import { getCookie, getSession, validateBearerToken, type Session } from "@/services/auth.ts";
+import { getCookie, getSession, validateApiKey, validateBearerToken, type ApiKeyAuthContext, type Session } from "@/services/auth.ts";
 import { devMode } from "@/devmode.ts";
 import { type DBClient } from "@/services/database.ts";
 import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
@@ -14,14 +14,35 @@ const apiInstance = new Elysia({ prefix: "/api" })
     .derive({ as: 'global' }, async ({ request, dbClient }) => {
         // Check for Bearer token (OAuth2.1)
         const authHeader = request.headers.get("Authorization");
+        const apiKeyHeader = request.headers.get("X-API-Key");
         let session: Session | undefined = undefined;
+        let apiKeyAuth: ApiKeyAuthContext | undefined = undefined;
         let isAuthenticated = false;
-        let authMethod: "session" | "bearer" | undefined = undefined;
+        let authMethod: "session" | "apiKey" | "bearer" | undefined = undefined;
         let tokenClaims: Record<string, any> | undefined = undefined;
 
-        if (authHeader?.startsWith("Bearer ")) {
+        // Session takes precedence over all other auth mechanisms.
+        const sessionId = getCookie(request, "SessionID");
+        if (sessionId) {
+            session = await getSession(dbClient, sessionId);
+            if (session) {
+                authMethod = "session";
+                tokenClaims = session.idTokenClaims;
+                isAuthenticated = true;
+            }
+        }
+
+        if (!isAuthenticated && apiKeyHeader) {
+            apiKeyAuth = await validateApiKey(dbClient, apiKeyHeader);
+            if (apiKeyAuth) {
+                authMethod = "apiKey";
+                tokenClaims = apiKeyAuth.claims;
+                isAuthenticated = true;
+            }
+        }
+
+        if (!isAuthenticated && authHeader?.startsWith("Bearer ")) {
             const token = authHeader.substring(7);
-            // Validate bearer token against EntraID
             tokenClaims = await validateBearerToken(dbClient, token);
             if (tokenClaims) {
                 authMethod = "bearer";
@@ -29,21 +50,17 @@ const apiInstance = new Elysia({ prefix: "/api" })
             }
         }
 
-        // Check for SessionID cookie
-        if (!isAuthenticated) {
-            const sessionId = getCookie(request, "SessionID");
-            if (sessionId) {
-                // Validate session using getSession which checks expiration and refreshes if needed
-                session = await getSession(dbClient, sessionId);
-                if (session) {
-                    authMethod = "session";
-                    isAuthenticated = true;
-                }
-            }
+        if (isAuthenticated && !tokenClaims && session) {
+            tokenClaims = session.idTokenClaims;
+        }
+
+        if (isAuthenticated && !tokenClaims && apiKeyAuth) {
+            tokenClaims = apiKeyAuth.claims;
         }
 
         return {
             session,
+            apiKeyAuth,
             isAuthenticated,
             authMethod,
             tokenClaims,
@@ -97,21 +114,14 @@ app.use(
                 securitySchemes: {
                     sessionId: {
                         type: "apiKey",
-                        in: "cookie",
-                        name: "SessionID",
-                        description: "Session ID cookie for authentication",
-                    },
-                    bearer: {
-                        type: "http",
-                        scheme: "bearer",
-                        bearerFormat: "JWT",
-                        description: "OAuth2.1 Bearer token (EntraID)",
+                        in: "header",
+                        name: "X-API-Key",
+                        description: "API key used for REST API authentication",
                     },
                 },
             },
             security: [
                 { sessionId: [] },
-                { bearer: [] },
             ],
         },
         path: "/docs",

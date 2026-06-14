@@ -1,6 +1,5 @@
 import type { ApiInstance } from "@/apps/api.ts";
 import { sse, t, status } from "elysia";
-import { getCookie } from "@/services/auth.ts";
 import {
     disconnectServerSentEventFilter,
     getKnownTopics,
@@ -17,19 +16,19 @@ function isTopicArray(value: unknown): value is string[] {
 /**
  * Derive a stable session key from the request's auth context.
  *
- * - Cookie-based sessions: `session:<SessionID cookie value>`
- * - Bearer token sessions: `bearer:<oid claim>`
+ * - API key sessions: `api_key:<apiKeyIdentifier claim>`
+ * - Session fallback: `session_user:<oid claim>`
  *
  * The key is opaque to the browser so the browser never needs to manage it.
  * Using the SessionID (or oid) as key ensures that reconnecting with the
  * same credentials restores the previously synced topic filter.
  */
-function deriveSseKey(request: Request, tokenClaims: Record<string, any> | undefined): string | null {
-    const sessionId = getCookie(request, "SessionID");
-    if (sessionId) return `session:${sessionId}`;
+function deriveSseKey(_request: Request, tokenClaims: Record<string, any> | undefined): string | null {
+    const apiKeyIdentifier = tokenClaims?.apiKeyIdentifier;
+    if (typeof apiKeyIdentifier === "string" && apiKeyIdentifier.length > 0) return `api_key:${apiKeyIdentifier}`;
 
     const oid = tokenClaims?.oid;
-    if (typeof oid === "string" && oid.length > 0) return `bearer:${oid}`;
+    if (typeof oid === "string" && oid.length > 0) return `session_user:${oid}`;
 
     return null;
 }
@@ -40,7 +39,7 @@ export default function register(app: ApiInstance) {
      * GET /api/server_sent_events/stream
      *
      * Opens an SSE stream for the authenticated session. The session key is
-     * derived server-side from the SessionID cookie or Bearer oid – the browser
+     * derived server-side from the API key context – the browser
      * does not need to supply a clientId. If the browser reconnects (same
      * credentials) an existing topic filter is preserved.
      */
@@ -80,7 +79,7 @@ export default function register(app: ApiInstance) {
         detail: {
             tags: ["Realtime"],
             summary: "Open an SSE stream for PubSub notifications",
-            description: "Opens an authenticated SSE stream. The session key is derived server-side from the SessionID cookie or the Bearer token oid claim. Topic filters are preserved across short disconnections so mobile clients can reconnect without re-syncing. Emits: connected, keepalive, pubsub.",
+            description: "Opens an authenticated SSE stream. The session key is derived server-side from the API key context. Topic filters are preserved across short disconnections so mobile clients can reconnect without re-syncing. Emits: connected, keepalive, pubsub.",
         },
         response: { 200: t.Any() },
     });
@@ -116,7 +115,7 @@ export default function register(app: ApiInstance) {
         detail: {
             tags: ["Realtime"],
             summary: "Update SSE topic filter for the current session",
-            description: "Replaces the server-side topic filter for the calling session. The session key is derived from the SessionID cookie or Bearer oid – the browser never has to manage a clientId. Uninterested events are dropped before reaching the stream.",
+            description: "Replaces the server-side topic filter for the calling session. The session key is derived from API key authentication context – the browser never has to manage a clientId. Uninterested events are dropped before reaching the stream.",
         },
     });
 

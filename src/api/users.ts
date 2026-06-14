@@ -4,7 +4,7 @@ import { getConfigEntriesByKey } from "@/repo/ConfigRepo.ts";
 import { type DBClient, runInTransaction } from "@/services/database.ts";
 import { config as uiConfig } from "@/services/ui_config.ts";
 import {type UserDetailsResponse, UserDetailsResponseSchema, type UsersResponse, UsersResponseSchema} from "@/types/AdminApi.ts";
-import { authorize, getCookie, getSession } from "@/services/auth.ts";
+import { authorize } from "@/services/auth.ts";
 import { FP_READ_FUNCTIONAL_PERMISSIONS, FP_READ_GROUPS, FP_READ_USERS } from "@/services/auth/functional_perms.ts";
 import { getGroupIdsAssignedTo, getGroups, getUserCount, getUsers } from "@/repo/UserRepo.ts";
 import { getFunctionalPermissionsOfGroup, getFunctionalPermissionsOfUser, getGroupsAssignedToFunctionalPermission } from "@/repo/FunctionalPermissionRepo.ts";
@@ -39,9 +39,8 @@ export async function getUserListPageSizes(context: RouteContext): Promise<numbe
 // noinspection JSUnusedGlobalSymbols
 export default function register(app: ApiInstance) {
     app.get("/users", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_READ_USERS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_READ_USERS]);
         if (!authz.some(p => p.identifier === FP_READ_USERS.identifier)) return status(403, `Permission denied. Required: ${FP_READ_USERS.functionalPermissionName}`);
 
         const availablePageSizes = await getUserListPageSizes(context);
@@ -89,20 +88,19 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", enum: ["true", "1", "false", "0"], default: "false" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },
     });
 
     app.get("/users/:userid", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_READ_USERS, FP_READ_GROUPS, FP_READ_FUNCTIONAL_PERMISSIONS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_READ_USERS, FP_READ_GROUPS, FP_READ_FUNCTIONAL_PERMISSIONS]);
         if (!authz.some(p => p.identifier === FP_READ_USERS.identifier)) return status(403, `Permission denied. Required: ${FP_READ_USERS.functionalPermissionName}`);
 
         return await runInTransaction(context.dbClient, async (_tx) => {
@@ -154,11 +152,11 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", enum: ["true", "1", "false", "0"], default: "false" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },

@@ -34,21 +34,14 @@ export default function register(app: ApiInstance) {
         detail: {
             tags: ["Auth"],
             summary: "Get current user context and functional permissions",
-            description: "Retrieve the currently authenticated user's identity information and list of functional permissions they have been granted through group memberships. Authentication is required via SessionID cookie (preferred) or Bearer token. Returns null values if claims are not available.",
+            description: "Retrieve the currently authenticated user's identity information and list of functional permissions. Authenticate with an API key using the X-API-Key header.",
             parameters: [
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie set after successful OAuth2 login. Use this for browser-based authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
-                },
-                {
-                    name: "Authorization",
-                    description: "Bearer token from EntraID for API-based authentication. Format: 'Bearer <token>'",
-                    in: "header",
-                    required: false,
-                    schema: { type: "string", example: "Bearer eyJhbGciOiJSUzI1NiIs..." },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },

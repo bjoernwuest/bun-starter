@@ -66,7 +66,7 @@ export async function getEntraIDTenantId(db: DBClient): Promise<string> { return
  *                             such as client ID, client secret, and tenant ID for authentication.
  * @returns {Client} The initialized Microsoft Graph Client instance.
  */
-function getGraphClient(db: DBClient): Client {
+export function getGraphClient(db: DBClient): Client {
   return Client.init({ authProvider: async (done) => {
       try {
         const tokenResponse = await (new ConfidentialClientApplication({auth: {
@@ -143,7 +143,7 @@ async function userSync(MSGraphQLClient: Client, DBClient: DBClient): Promise<Id
  * @param {boolean} [users=false] - A flag indicating whether to synchronize user memberships (if true) or group memberships (if false).
  * @return {Promise<void>} A promise that resolves when the synchronization process is complete.
  */
-async function membershipSync(MSGraphQLClient: Client, DBClient: DBClient, Id_s: IdentifierType[], users: boolean = false) {
+export async function membershipSync(MSGraphQLClient: Client, DBClient: DBClient, Id_s: IdentifierType[], users: boolean = false) {
   const Ids = Id_s.filter(i => i.identifier !== "00000000-0000-0000-0000-000000000000");
   type GraphMemberPage = { value?: { id: string; "@odata.type"?: string }[]; "@odata.nextLink"?: string };
   for (const id of Ids) {
@@ -266,16 +266,27 @@ export async function startScheduler(): Promise<StartupSyncState> {
   // Schedule, if schedule is valid
   if (expr && expr !== "off") try { new Cron(expr, () => { void runOnce(); }, { name: "EntraID user and group sync", }); } catch (_e) {}
 
-  // Register to update user memberships on login
-  PubSub.subscribe(pubsub_UserAuthLogin, async (session) => {
-    if (session?.idTokenClaims?.oid && session?.idTokenClaims?.groups) {
-      const idTokenClaims = session.idTokenClaims;
-      await getDatabaseConnection().transaction(async tx => {
-        await upsertUsers(tx, [{ identifier: idTokenClaims.oid, firstName: idTokenClaims.given_name ?? '', lastName: idTokenClaims.family_name ?? '', email: idTokenClaims.email || idTokenClaims.preferred_username || '', disabled: false }]);
-        await membershipSync(getGraphClient(getDatabaseConnection()), getDatabaseConnection(), [{identifier: idTokenClaims.oid}], true);
-      });
-    }
-  })
+   // Register to update user memberships on login
+   // IMPORTANT: This is awaited to ensure memberships are synchronized before the user
+   // accesses any protected resources (avoids race condition where user has no permissions immediately after login)
+   PubSub.subscribe(pubsub_UserAuthLogin, async (session) => {
+     if (session?.idTokenClaims?.oid) {
+       const idTokenClaims = session.idTokenClaims;
+       try {
+         await getDatabaseConnection().transaction(async tx => {
+           const graphClient = getGraphClient(tx);
+           await upsertUsers(tx, [{ identifier: idTokenClaims.oid, firstName: idTokenClaims.given_name ?? '', lastName: idTokenClaims.family_name ?? '', email: idTokenClaims.email || idTokenClaims.preferred_username || '', disabled: false }]);
+           // CRITICAL: Sync memberships from Graph API instead of token claims for reliability
+           // This ensures group memberships are always current, even if token doesn't contain them
+           await membershipSync(graphClient, tx, [{identifier: idTokenClaims.oid}], true);
+         });
+       } catch (e) {
+         if (devMode) console.warn("Failed to sync user on login:", e);
+         // Log but don't fail login—user can still authenticate, but without group permissions
+         // This is better than blocking login entirely
+       }
+     }
+   })
 
   // Run first sync on startup without blocking app startup after groups are loaded.
   void runOnce(resolveGroupsReady).catch((e) => {

@@ -9,6 +9,8 @@ import * as AdminFunctionalPermissionListPage from "./pages/AdminFunctionalPermi
 import * as AdminFunctionalPermissionDetailPage from "./pages/AdminFunctionalPermissionDetail.tsx";
 import * as AdminApiDocumentationPage from "./pages/AdminApiDocumentation.tsx";
 import * as AdminConfigListPage from "./pages/AdminConfigList.tsx";
+import * as AdminApiKeyListPage from "./pages/AdminApiKeyList.tsx";
+import * as AdminApiKeyDetailPage from "./pages/AdminApiKeyDetail.tsx";
 import type { NavGroupItem, NavItem, NavLeafItem, NavSection, PageMeta, PageModule } from "@/ui/types/Page.ts";
 
 /**
@@ -31,6 +33,8 @@ export const pageModules: readonly PageModule[] = [
     { meta: AdminFunctionalPermissionDetailPage.meta, Component: AdminFunctionalPermissionDetailPage.Component },
     { meta: AdminApiDocumentationPage.meta, Component: AdminApiDocumentationPage.Component },
     { meta: AdminConfigListPage.meta, Component: AdminConfigListPage.Component },
+    { meta: AdminApiKeyListPage.meta, Component: AdminApiKeyListPage.Component },
+    { meta: AdminApiKeyDetailPage.meta, Component: AdminApiKeyDetailPage.Component },
 ];
 
 /**

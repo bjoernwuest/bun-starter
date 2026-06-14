@@ -734,6 +734,30 @@ button:hover:not(:disabled) { background: var(--at-primary-dark); }
   padding: 1rem 1.25rem 1.2rem !important;
 }
 
+.admin-api-key-dialog .p-dialog-content {
+  overflow-x: hidden;
+}
+
+.admin-api-key-secret {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--at-surface-border);
+  border-radius: 8px;
+  background: var(--at-surface-50);
+  color: var(--at-text-primary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-api-key-dialog .admin-config-actions {
+  flex-wrap: wrap;
+}
+
 .admin-config-dialog .p-dialog-header-icon {
   width: 2rem;
   height: 2rem;

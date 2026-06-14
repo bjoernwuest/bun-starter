@@ -114,6 +114,7 @@ export default function register(app: ApiInstance) {
 
         const origin = new URL(request.url).origin;
         const authorizationHeader = request.headers.get("Authorization") ?? undefined;
+        const apiKeyHeader = request.headers.get("X-API-Key") ?? undefined;
         const cookieHeader = request.headers.get("Cookie") ?? undefined;
         const encoder = new TextEncoder();
 
@@ -189,6 +190,7 @@ export default function register(app: ApiInstance) {
                     }
                 }
                 if (authorizationHeader) headers.set("Authorization", authorizationHeader);
+                if (apiKeyHeader) headers.set("X-API-Key", apiKeyHeader);
                 if (cookieHeader) headers.set("Cookie", cookieHeader);
 
                 try {
@@ -279,21 +281,14 @@ export default function register(app: ApiInstance) {
         detail: {
             tags: ["Request Bundling"],
             summary: "Execute multiple mutating API requests in a single streamed request bundling call",
-            description: "Submit a batch of mutating API requests (POST, PUT, PATCH, DELETE) to be executed sequentially. Responses are streamed back as NDJSON (newline-delimited JSON) for real-time processing. Supports automatic retry with duplicate detection via clientRequestId. Authorization and cookies from the bundling request are forwarded to all sub-requests. Note: nested bundling requests are rejected.",
+            description: "Submit a batch of mutating API requests (POST, PUT, PATCH, DELETE) to be executed sequentially. Responses are streamed back as NDJSON (newline-delimited JSON) for real-time processing. Supports automatic retry with duplicate detection via clientRequestId. API key authentication headers are forwarded to all sub-requests. Note: nested bundling requests are rejected.",
             parameters: [
                 {
-                    name: "Authorization",
-                    description: "Bearer token from EntraID. Forwarded to all sub-requests. Use this for API-based authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication. Forwarded to all sub-requests.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "Bearer eyJhbGciOiJSUzI1NiIs..." },
-                },
-                {
-                    name: "Cookie",
-                    description: "SessionID cookie. Forwarded to all sub-requests. Use this for browser-based authentication.",
-                    in: "header",
-                    required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },

@@ -21,7 +21,7 @@ export const identifierColumnType = (name: string) => uuid(name);
  */
 export const Identifier = { identifier: identifierColumnType("identifier").primaryKey().defaultRandom() }
 
-export const timestampColumnType = (name: string) => timestamp(name);
+export const timestampColumnType = (name: string) => timestamp(name, { mode: "string" });
 /**
  * An object representing timestamp fields for a database record.
  *
@@ -33,5 +33,5 @@ export const timestampColumnType = (name: string) => timestamp(name);
  */
 export const timestamps = {
     createdAt: timestampColumnType("created_at").notNull().defaultNow(),
-    updatedAt: timestampColumnType("updated_at").notNull().defaultNow().$onUpdate(() => new Date()),
+    updatedAt: timestampColumnType("updated_at").notNull().defaultNow().$onUpdate(() => new Date().toISOString()),
 }

@@ -1,5 +1,5 @@
 import type { ApiInstance } from "@/apps/api.ts";
-import { authorize, getCookie, getLoggedinUserObject, getSession } from "@/services/auth.ts";
+import { authorize, getLoggedinUserObject } from "@/services/auth.ts";
 import {
     GroupFunctionalPermissionResponseSchema,
     GroupsResponseSchema,
@@ -27,9 +27,8 @@ function parseBooleanQuery(value: unknown): boolean {
 // noinspection JSUnusedGlobalSymbols
 export default function register(app: ApiInstance) {
     app.get("/groups", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_READ_GROUPS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_READ_GROUPS]);
         if (!authz.some(p => p.identifier === FP_READ_GROUPS.identifier)) return status(403, `Permission denied. Required: ${FP_READ_GROUPS.functionalPermissionName}`);
 
         const availablePageSizes = await getUserListPageSizes(context);
@@ -77,20 +76,19 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", enum: ["true", "1", "false", "0"], default: "false" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },
     });
 
     app.get("/groups/:groupid", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_READ_GROUPS, FP_READ_GROUP_FUNCTIONAL_PERMISSIONS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_READ_GROUPS, FP_READ_GROUP_FUNCTIONAL_PERMISSIONS]);
         if (!authz.some(p => p.identifier === FP_READ_GROUPS.identifier)) return status(403, `Permission denied. Required: ${FP_READ_GROUPS.functionalPermissionName}`);
 
         return await runInTransaction(context.dbClient, async (_tx) => {
@@ -121,21 +119,20 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", format: "uuid" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },
     });
 
     app.get("/groups/:groupid/functionalpermissions", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
         const requiredPermissions = [FP_READ_GROUPS, FP_READ_FUNCTIONAL_PERMISSIONS, FP_READ_GROUP_FUNCTIONAL_PERMISSIONS];
-        const authz = await authorize(context.dbClient, session.idTokenClaims, requiredPermissions);
+        const authz = await authorize(context.dbClient, claims, requiredPermissions);
         if (!requiredPermissions.every(p => authz.some(ap => ap.identifier === p.identifier))) return status(403, `Permission denied. Required: ${requiredPermissions.map(p => p.functionalPermissionName).join(", ")}`);
 
         return await getFunctionalPermissionsOfGroup(context.dbClient, {identifier: context.params.groupid});
@@ -154,23 +151,22 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", format: "uuid" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },
     });
 
     app.post("/groups/:groupid/functionalpermissions", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
         if (!authz.some(p => p.identifier === FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.identifier)) return status(403, `Permission denied. Required: ${FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.functionalPermissionName}`);
 
-        const user = await getLoggedinUserObject(context.dbClient, session.idTokenClaims);
+        const user = await getLoggedinUserObject(context.dbClient, claims);
         try { await grantFunctionalPermissionToGroup(context.dbClient, user, {identifier: context.params.groupid}, context.body.permissionIdentifiers.map(id => ({identifier: id}))); }
         catch (_err) { return status(404, {error: "Could not grant", message: _err}); }
         return { success: true };
@@ -192,20 +188,19 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", format: "uuid" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },
     });
 
     app.delete("/groups/:groupid/functionalpermissions", async (context) => {
-        const session = await getSession(context.dbClient, getCookie(context.request, "SessionID"));
-        if (!session) return status(401, "Not authenticated");
-        const authz = await authorize(context.dbClient, session.idTokenClaims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
+        const claims = context.session?.idTokenClaims ?? context.tokenClaims ?? {};
+        const authz = await authorize(context.dbClient, claims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
         if (!authz.some(p => p.identifier === FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.identifier)) return status(403, `Permission denied. Required: ${FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.functionalPermissionName}`);
 
         try { await revokeFunctionalPermissionFromGroup(context.dbClient, {identifier: context.params.groupid}, context.body.permissionIdentifiers.map(id => ({identifier: id}))); }
@@ -229,11 +224,11 @@ export default function register(app: ApiInstance) {
                     schema: { type: "string", format: "uuid" },
                 },
                 {
-                    name: "Cookie",
-                    description: "SessionID cookie containing the authenticated session. Required for authentication.",
+                    name: "X-API-Key",
+                    description: "API key used for authentication.",
                     in: "header",
                     required: false,
-                    schema: { type: "string", example: "SessionID=<session-uuid>" },
+                    schema: { type: "string", example: "your-api-key" },
                 },
             ],
         },

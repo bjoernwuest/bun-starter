@@ -9,6 +9,7 @@ import {
     FP_READ_FUNCTIONAL_PERMISSIONS,
     FP_READ_GROUPS,
     FP_READ_USERS,
+    FP_VIEW_API_KEYS,
 } from "@/ui/auth/functional_permissions.ts";
 
 export const meta: PageMeta = {
@@ -43,6 +44,11 @@ const adminCards = [
         to: "/admin/config",
         label: "Configuration",
         requiredFunctionalPermissions: [FP_MANAGE_CONFIGURATION.functionalPermissionName],
+    },
+    {
+        to: "/admin/api-keys",
+        label: "API keys",
+        requiredFunctionalPermissions: [FP_VIEW_API_KEYS.functionalPermissionName],
     },
 ] as const;
 
