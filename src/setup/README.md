@@ -1,0 +1,1 @@
+Setup application. Run everytime the application detects that setup is required.

@@ -1,0 +1,41 @@
+/**
+ * Canonical functional permission names shared by UI and server-side registration.
+ *
+ * We use an `as const` object (enum-like) to keep literal string unions and
+ * preserve maximum type-safety across build targets.
+ */
+export const FunctionalPermissionNames = {
+    FP_READ_USERS: "FP_READ_USERS",
+    FP_READ_GROUPS: "FP_READ_GROUPS",
+    FP_READ_GROUP_FUNCTIONAL_PERMISSIONS: "FP_READ_GROUP_FUNCTIONAL_PERMISSIONS",
+    FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS: "FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS",
+    FP_READ_FUNCTIONAL_PERMISSIONS: "FP_READ_FUNCTIONAL_PERMISSIONS",
+    FP_READ_FUNCTIONAL_PERMISSION_GROUPS: "FP_READ_FUNCTIONAL_PERMISSION_GROUPS",
+    FP_READ_API_DOCUMENTATION: "FP_READ_API_DOCUMENTATION",
+    FP_MANAGE_CONFIGURATION: "FP_MANAGE_CONFIGURATION",
+    GRANT_FUNCTIONAL_PERMISSIONS: "Grant functional permissions",
+} as const;
+
+export type FunctionalPermissionName = (typeof FunctionalPermissionNames)[keyof typeof FunctionalPermissionNames];
+
+export const ALL_FUNCTIONAL_PERMISSION_NAMES: readonly FunctionalPermissionName[] =
+    Object.values(FunctionalPermissionNames) as FunctionalPermissionName[];
+
+const functionalPermissionNameSet = new Set<FunctionalPermissionName>(ALL_FUNCTIONAL_PERMISSION_NAMES);
+
+/** Runtime type guard for values coming from external systems (e.g. DB/API). */
+export function isFunctionalPermissionName(value: unknown): value is FunctionalPermissionName {
+    return typeof value === "string" && functionalPermissionNameSet.has(value as FunctionalPermissionName);
+}
+
+/** UI-side helpers preserving existing `*.functionalPermissionName` usage pattern. */
+export const FP_READ_USERS = { functionalPermissionName: FunctionalPermissionNames.FP_READ_USERS } as const;
+export const FP_READ_GROUPS = { functionalPermissionName: FunctionalPermissionNames.FP_READ_GROUPS } as const;
+export const FP_READ_GROUP_FUNCTIONAL_PERMISSIONS = { functionalPermissionName: FunctionalPermissionNames.FP_READ_GROUP_FUNCTIONAL_PERMISSIONS } as const;
+export const FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS = { functionalPermissionName: FunctionalPermissionNames.FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS } as const;
+export const FP_READ_FUNCTIONAL_PERMISSIONS = { functionalPermissionName: FunctionalPermissionNames.FP_READ_FUNCTIONAL_PERMISSIONS } as const;
+export const FP_READ_FUNCTIONAL_PERMISSION_GROUPS = { functionalPermissionName: FunctionalPermissionNames.FP_READ_FUNCTIONAL_PERMISSION_GROUPS } as const;
+export const FP_READ_API_DOCUMENTATION = { functionalPermissionName: FunctionalPermissionNames.FP_READ_API_DOCUMENTATION } as const;
+export const FP_MANAGE_CONFIGURATION = { functionalPermissionName: FunctionalPermissionNames.FP_MANAGE_CONFIGURATION } as const;
+
+
