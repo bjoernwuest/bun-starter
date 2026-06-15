@@ -1,6 +1,7 @@
 // ONLY `/src/models/schema_f.ts` AND FILES IN `/src/models/schema_f`, `/src/models/types_f`, AND `/src/models/repos_f` ARE PERMITTED TO IMPORT FROM THIS FILE
 
 import {timestamp, uuid} from "drizzle-orm/pg-core";
+import {sql} from "drizzle-orm";
 
 /**
  * A function that generates a UUID (Universally Unique Identifier) based on the provided name.
@@ -19,7 +20,7 @@ export const identifierColumnType = (name: string) => uuid(name);
  *
  * The column is designed to uniquely identify records within a database table.
  */
-export const Identifier = { identifier: identifierColumnType("identifier").primaryKey().defaultRandom() }
+export const Identifier = { identifier: identifierColumnType("identifier").primaryKey().default(sql`uuidv7()`) }
 
 export const timestampColumnType = (name: string) => timestamp(name, { mode: "string" });
 /**

@@ -26,7 +26,7 @@ THIS DOCUMENT DESCRIBES GENERAL GUIDELINES THAT MUST BE FOLLOWED. ANY DEVIATION 
 12. Never issue any drizzle ORM data base activity outside of /src/repo - unless it already exists in the code base.
 13. When an operation involves multiple data base operations run them within /src/services/database.ts `runInTransaction` function.
 14. All UI texts must be in English.
-
+15. For "optimistic locking" use the `updatedAt` field in the database schema (`/src/schema/helpers.ts`, `timestampColumnType`). Then round-trip: read data on server including `updatedAt` > forward to UI / API > edit data > forward edited data including `updatedAt` to server > server to issue `UPDATE ... SET ..., updatedAt = now() WHERE ... AND updatedAt = <updatedAt received from client>`.
 
 ** STOP READING HERE. THE FOLLOWING GUIDELINES ARE NOT YET FINALIZED AND MAY CHANGE IN THE FUTURE. **
 
