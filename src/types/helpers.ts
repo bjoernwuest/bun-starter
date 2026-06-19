@@ -29,4 +29,4 @@ export const IdentifierSchema = t.Object({ identifier: t.String({format: "uuid"}
 /**
  * Helper type to create "at least one must be present" types.
  */
-type AtLeastOne<T> = { [K in keyof T]: Required<Pick<T, K>> & Partial<Omit<T, K>> }[keyof T];
+export type AtLeastOne<T> = { [K in keyof T]: Required<Pick<T, K>> & Partial<Omit<T, K>> }[keyof T];

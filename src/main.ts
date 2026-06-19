@@ -1,11 +1,8 @@
 import { type DBClient, getDatabaseConnection, initDatabase } from "@/services/database.ts";
-import setupApp from "@/apps/setup.ts";
 import { startScheduler as startEntraIDSync } from "@/services/EntraIDSync.ts";
+import { startAuditLog } from "@/services/audit_log.ts";
 import { Elysia } from "elysia";
 import { devMode } from "@/devmode.ts";
-import { app as loginApp } from "@/apps/login.ts";
-import { app as apiApp } from "@/apps/api.ts";
-import { app as uiApp } from "@/apps/ui.ts";
 
 console.log("⚡ Start application...");
 
@@ -15,6 +12,12 @@ await initDatabase();
 console.log("...⚡ Register functional permissions...");
 await import("@/services/auth/functional_perms.ts");
 
+console.log("...⚡ Load application modules...");
+const { default: setupApp } = await import("@/apps/setup.ts");
+const { app: loginApp } = await import("@/apps/login.ts");
+const { app: apiApp } = await import("@/apps/api.ts");
+const { app: uiApp } = await import("@/apps/ui.ts");
+
 console.log("...⚡ Check if setup is required...");
 await setupApp();
 
@@ -23,6 +26,10 @@ try {
   const syncState = await startEntraIDSync();
   await syncState.groupsReady;
 } catch (e) { console.warn("EntraID sync could not start (continuing without it):", e); }
+
+// Start the audit log subscriber (batched PubSub listener)
+console.log("...⚡ Start audit log subscriber...");
+await startAuditLog();
 
 // Start real app
 const app = new Elysia();

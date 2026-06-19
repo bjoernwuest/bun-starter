@@ -1,3 +1,5 @@
+import { FunctionalPermissionNames as FPN } from "./app_functional_permissions.ts";
+
 /**
  * Canonical functional permission names shared by UI and server-side registration.
  *
@@ -5,6 +7,7 @@
  * preserve maximum type-safety across build targets.
  */
 export const FunctionalPermissionNames = {
+    ...FPN,
     FP_READ_USERS: "FP_READ_USERS",
     FP_READ_GROUPS: "FP_READ_GROUPS",
     FP_READ_GROUP_FUNCTIONAL_PERMISSIONS: "FP_READ_GROUP_FUNCTIONAL_PERMISSIONS",
@@ -17,6 +20,8 @@ export const FunctionalPermissionNames = {
     FP_CREATE_API_KEYS: "create_api_keys",
     FP_VIEW_API_KEYS: "view_api_keys",
     GRANT_FUNCTIONAL_PERMISSIONS: "Grant functional permissions",
+    FP_READ_AUDIT_LOG: "read_audit_log",
+    FP_CLEAR_AUDIT_LOG: "clear_audit_log",
 } as const;
 
 export type FunctionalPermissionName = (typeof FunctionalPermissionNames)[keyof typeof FunctionalPermissionNames];
@@ -43,5 +48,7 @@ export const FP_MANAGE_CONFIGURATION = { functionalPermissionName: FunctionalPer
 export const FP_PROLONG_API_KEYS = { functionalPermissionName: FunctionalPermissionNames.FP_PROLONG_API_KEYS } as const;
 export const FP_CREATE_API_KEYS = { functionalPermissionName: FunctionalPermissionNames.FP_CREATE_API_KEYS } as const;
 export const FP_VIEW_API_KEYS = { functionalPermissionName: FunctionalPermissionNames.FP_VIEW_API_KEYS } as const;
+export const FP_READ_AUDIT_LOG = { functionalPermissionName: FunctionalPermissionNames.FP_READ_AUDIT_LOG } as const;
+export const FP_CLEAR_AUDIT_LOG = { functionalPermissionName: FunctionalPermissionNames.FP_CLEAR_AUDIT_LOG } as const;
 
-
+export * from "./app_functional_permissions.ts";

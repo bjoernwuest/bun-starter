@@ -4,7 +4,7 @@ import { getLoggedinUserObject } from "@/services/auth.ts";
 import {status, t} from "elysia";
 import { FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS, FP_READ_FUNCTIONAL_PERMISSIONS, FP_READ_GROUP_FUNCTIONAL_PERMISSIONS, FP_READ_GROUPS } from "@/services/auth/functional_perms.ts";
 import { getFunctionalPermission, getFunctionalPermissionCount, getFunctionalPermissions, getGroupsAssignedToFunctionalPermission, grantFunctionalPermissionToGroup, revokeFunctionalPermissionFromGroup } from "@/repo/FunctionalPermissionRepo.ts";
-import { getGroups } from "@/repo/UserRepo.ts";
+import {getGroups, getSystemUser} from "@/repo/UserRepo.ts";
 import { runInTransaction } from "@/services/database.ts";
 import {
     ErrorSchema, FunctionalPermissionDetailResponseSchema, FunctionalPermissionsResponseSchema,
@@ -115,7 +115,7 @@ export default function register(app: ApiInstance) {
         if (!authz.some(p => p.identifier === FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.identifier)) return status(403, `Permission denied. Required: ${FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.functionalPermissionName}`);
 
         await runInTransaction(context.dbClient, async (_tx) => {
-            const user = await getLoggedinUserObject(context.dbClient, claims);
+            const user = await getLoggedinUserObject(context.dbClient, claims) ?? await getSystemUser(context.dbClient);
             const groups = await getGroups(context.dbClient, context.body.groupIdentifiers.map(id => ({identifier: id})));
             for (const group of groups) {
                 try { await grantFunctionalPermissionToGroup(context.dbClient, user, group, [{identifier: context.params.functionalpermissionid}]); }
@@ -159,7 +159,7 @@ export default function register(app: ApiInstance) {
         await runInTransaction(context.dbClient, async (_tx) => {
             const groups = await getGroups(context.dbClient, context.body.groupIdentifiers.map(id => ({identifier: id})));
             for (const group of groups) {
-                try { await revokeFunctionalPermissionFromGroup(context.dbClient, group, [{identifier: context.params.functionalpermissionid}]); }
+                try { await revokeFunctionalPermissionFromGroup(context.dbClient, (await getLoggedinUserObject(context.dbClient, claims)) ?? await getSystemUser(context.dbClient), group, [{identifier: context.params.functionalpermissionid}]); }
                 catch (_err) { return status(404, {error: "Could not revoke", message: _err}); }
             }
         });

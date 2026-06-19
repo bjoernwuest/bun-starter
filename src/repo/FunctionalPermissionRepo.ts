@@ -8,6 +8,11 @@ import { devMode } from "@/devmode.ts";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type {FunctionalPermissionType} from "@/types/FunctionalPermission.ts";
 import { isFunctionalPermissionName } from "@/ui/auth/functional_permissions.ts";
+import PubSub from "@/services/pubsub.ts";
+
+export const pubsub_FunctionalPermissions = "functional_permissions";
+export const pubsub_FunctionalPermissionGranted = `grant.${pubsub_FunctionalPermissions}`;
+export const pubsub_FunctionalPermissionRevoked = `revoke.${pubsub_FunctionalPermissions}`;
 
 function toValidatedFunctionalPermissionType(permission: unknown): FunctionalPermissionType {
     if (!permission || typeof permission !== "object") {
@@ -42,6 +47,7 @@ export async function grantFunctionalPermissionToGroup(DBClient: DBClient, userG
 
         if (devMode) console.log(userGranting, " grants ", permissions, " to ", grantTo);
         await DBClient.insert(FunctionalPermissionsOfGroup).values(permissions.map(p => ({grantedBy: userGranting.identifier, grantedTo: grantTo.identifier, functionalPermissionIdentifier: p.identifier}))).onConflictDoNothing().returning();
+        await PubSub.publish(pubsub_FunctionalPermissionGranted, { userGranting, grantTo, permissions });
     } catch (err) {
         if (devMode) console.error('grantFunctionalPermissionToGroup failed:', err);
         throw err;
@@ -115,18 +121,23 @@ export async function getFunctionalPermissionCount(DBClient: DBClient): Promise<
  * Removes the permissions from the database and returns the number of permissions successfully removed.
  *
  * @param {DBClient} DBClient - The database client used to execute the revocation operation. Must not be null or undefined.
+ * @param {UserType} userRevoking - The user revoking the permissions. Must include a valid identifier.
  * @param {GroupType} revokeFrom - The group from which the permissions will be revoked. Must include a valid 'identifier' property.
  * @param {FunctionalPermissionType[]} permissions - An array of functional permission objects to be revoked. Each permission must include a valid 'identifier' property.
  * @return {Promise<number>} A promise that resolves to the number of permissions successfully revoked.
  * @throws Will throw an error if the `DBClient` is not provided, if `revokeFrom` or its `identifier` is missing, or if the operation encounters any unexpected issues.
  */
-export async function revokeFunctionalPermissionFromGroup(DBClient: DBClient, revokeFrom: GroupType | IdentifierType, permissions: FunctionalPermissionType[] | IdentifierType[]): Promise<number> {
+export async function revokeFunctionalPermissionFromGroup(DBClient: DBClient, userRevoking: UserType, revokeFrom: GroupType | IdentifierType, permissions: FunctionalPermissionType[] | IdentifierType[]): Promise<number> {
     try {
         if (!DBClient) throw new Error('DBClient is required');
         if (!revokeFrom || !revokeFrom.identifier) throw new Error('revokeFrom with identifier is required');
         if (!Array.isArray(permissions) || permissions.length === 0) return 0;
 
-        return (await DBClient.delete(FunctionalPermissionsOfGroup).where(and(eq(FunctionalPermissionsOfGroup.grantedTo, revokeFrom.identifier), inArray(FunctionalPermissionsOfGroup.functionalPermissionIdentifier, permissions.map(p => p.identifier)))).returning()).length;
+        const revoked = (await DBClient.delete(FunctionalPermissionsOfGroup).where(and(eq(FunctionalPermissionsOfGroup.grantedTo, revokeFrom.identifier), inArray(FunctionalPermissionsOfGroup.functionalPermissionIdentifier, permissions.map(p => p.identifier)))).returning()).length;
+        if (revoked > 0) {
+            PubSub.publish(pubsub_FunctionalPermissionRevoked, { userRevoking, revokeFrom, permissions });
+        }
+        return revoked;
     } catch (err) {
         if (devMode) console.error('revokeFunctionalPermissionFromGroup failed:', err);
         throw err;

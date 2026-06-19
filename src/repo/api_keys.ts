@@ -9,6 +9,11 @@ import PubSub from "@/services/pubsub.ts";
 export const pubsub_ApiKeys = "api_keys";
 export const pubsub_ApiKeyPermissionsChanged = `${pubsub_ApiKeys}.permissions.changed`;
 
+export const pubsub_ApiKeyCreated = `create.${pubsub_ApiKeys}`;
+export const pubsub_ApiKeyUpdated = `update.${pubsub_ApiKeys}`;
+export const pubsub_ApiKeyDisabled = `disable.${pubsub_ApiKeys}`;
+export const pubsub_ApiKeyDeleted = `delete.${pubsub_ApiKeys}`;
+
 function generateApiKeySecret(length: number): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     const values = new Uint8Array(length);
@@ -107,6 +112,7 @@ export async function createApiKey(
         ).onConflictDoNothing();
     }
 
+    PubSub.publish(pubsub_ApiKeyCreated, { apiKeyIdentifier: apiKey.identifier });
     PubSub.publish(pubsub_ApiKeyPermissionsChanged, { apiKeyIdentifier: apiKey.identifier });
     return { apiKey, plainApiKey };
 }
@@ -128,6 +134,10 @@ export async function updateApiKeyMetadata(
         eq(ApiKey.identifier, data.apiKeyIdentifier),
         sql`${ApiKey.updatedAt} = ${data.knownUpdatedAt}::timestamp`,
     )).returning();
+
+    if (rows[0]) {
+        PubSub.publish(pubsub_ApiKeyUpdated, { apiKeyIdentifier: data.apiKeyIdentifier });
+    }
     return rows[0];
 }
 
@@ -150,6 +160,10 @@ export async function prolongApiKey(
         eq(ApiKey.disabled, false),
         sql`${ApiKey.updatedAt} = ${data.knownUpdatedAt}::timestamp`,
     )).returning();
+
+    if (rows[0]) {
+        PubSub.publish(pubsub_ApiKeyUpdated, { apiKeyIdentifier: data.apiKeyIdentifier });
+    }
     return rows[0];
 }
 
@@ -171,6 +185,10 @@ export async function disableApiKey(
         eq(ApiKey.disabled, false),
         sql`${ApiKey.updatedAt} = ${data.knownUpdatedAt}::timestamp`,
     )).returning();
+
+    if (rows[0]) {
+        PubSub.publish(pubsub_ApiKeyDisabled, { apiKeyIdentifier: data.apiKeyIdentifier });
+    }
     return rows[0];
 }
 
@@ -185,7 +203,7 @@ export async function deleteApiKey(
         eq(ApiKey.identifier, data.apiKeyIdentifier),
         sql`${ApiKey.updatedAt} = ${data.knownUpdatedAt}::timestamp`,
     )).returning();
-    PubSub.publish(pubsub_ApiKeyPermissionsChanged, { apiKeyIdentifier: data.apiKeyIdentifier });
+    PubSub.publish(pubsub_ApiKeyDeleted, { apiKeyIdentifier: data.apiKeyIdentifier });
     return rows.length > 0;
 }
 

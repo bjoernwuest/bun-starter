@@ -656,9 +656,9 @@ export async function logout(db: DBClient, request: Request): Promise<LogoutResu
  * @return {Promise<UserType>} A promise that resolves to the user object if found, otherwise throws an error.
  * @throws {Error} Throws an error if the OID is missing or invalid in the token claims or if the user is not found.
  */
-export async function getLoggedinUserObject(db: DBClient, idTokenClaims: Record<string, any>): Promise<UserType> {
+export async function getLoggedinUserObject(db: DBClient, idTokenClaims: Record<string, any>): Promise<UserType | undefined> {
     const oid = idTokenClaims?.oid;
-    if (!oid || typeof oid !== "string") throw new Error("Missing user OID in claims");
+    if (!oid || typeof oid !== "string") return undefined;
     const users = await getUsers(db, [{ identifier: oid }]);
     if (users.length < 1) throw new Error(`User not found for OID ${oid}`);
     return users[0]!;
@@ -760,11 +760,13 @@ export async function getMyFunctionalPermissions(DBClient: DBClient, tokens: Rec
     }
     if (tokens.oid) {
         const user = await getLoggedinUserObject(DBClient, tokens);
-        if (await isMemberOfRootUserGroup(DBClient, user)) {
-            await getFunctionalPermissionGrant(DBClient);
-            return await getFunctionalPermissions(DBClient);
-        }
-        return await getFunctionalPermissionsOfUser(DBClient, user);
+        if (user) {
+            if (await isMemberOfRootUserGroup(DBClient, user)) {
+                await getFunctionalPermissionGrant(DBClient);
+                return await getFunctionalPermissions(DBClient);
+            }
+            return await getFunctionalPermissionsOfUser(DBClient, user);
+        } else return [];
     }
     else {
         // FIXME: get groups from OAUTH token
@@ -787,7 +789,7 @@ export async function authorize(DBClient: DBClient, tokens: Record<string, any>,
     if (!isApiKeyAuth) {
         try {
             const user = await getLoggedinUserObject(DBClient, tokens);
-            if (await isMemberOfRootUserGroup(DBClient, user)) return Array.isArray(permissions) ? permissions : [permissions];
+            if (user && await isMemberOfRootUserGroup(DBClient, user)) return Array.isArray(permissions) ? permissions : [permissions];
         } catch (_) { /* user not found or no OID — fall through to normal check */ }
     }
     const mine = await getMyFunctionalPermissions(DBClient, tokens);

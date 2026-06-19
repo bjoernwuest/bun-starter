@@ -11,6 +11,7 @@ import * as AdminApiDocumentationPage from "./pages/AdminApiDocumentation.tsx";
 import * as AdminConfigListPage from "./pages/AdminConfigList.tsx";
 import * as AdminApiKeyListPage from "./pages/AdminApiKeyList.tsx";
 import * as AdminApiKeyDetailPage from "./pages/AdminApiKeyDetail.tsx";
+import * as AdminAuditLogPage from "./pages/AdminAuditLog.tsx";
 import type { NavGroupItem, NavItem, NavLeafItem, NavSection, PageMeta, PageModule } from "@/ui/types/Page.ts";
 
 /**
@@ -35,6 +36,7 @@ export const pageModules: readonly PageModule[] = [
     { meta: AdminConfigListPage.meta, Component: AdminConfigListPage.Component },
     { meta: AdminApiKeyListPage.meta, Component: AdminApiKeyListPage.Component },
     { meta: AdminApiKeyDetailPage.meta, Component: AdminApiKeyDetailPage.Component },
+    { meta: AdminAuditLogPage.meta, Component: AdminAuditLogPage.Component },
 ];
 
 /**

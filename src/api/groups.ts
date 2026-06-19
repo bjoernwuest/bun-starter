@@ -16,7 +16,7 @@ import {
     FP_READ_GROUP_FUNCTIONAL_PERMISSIONS,
     FP_READ_GROUPS
 } from "@/services/auth/functional_perms.ts";
-import { getGroup, getGroups, GroupCount } from "@/repo/UserRepo.ts";
+import {getGroup, getGroups, getSystemUser, GroupCount} from "@/repo/UserRepo.ts";
 import { runInTransaction } from "@/services/database.ts";
 import { getUserListPageSizes } from "@/api/users.ts";
 
@@ -166,7 +166,7 @@ export default function register(app: ApiInstance) {
         const authz = await authorize(context.dbClient, claims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
         if (!authz.some(p => p.identifier === FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.identifier)) return status(403, `Permission denied. Required: ${FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.functionalPermissionName}`);
 
-        const user = await getLoggedinUserObject(context.dbClient, claims);
+        const user = await getLoggedinUserObject(context.dbClient, claims) ?? await getSystemUser(context.dbClient);
         try { await grantFunctionalPermissionToGroup(context.dbClient, user, {identifier: context.params.groupid}, context.body.permissionIdentifiers.map(id => ({identifier: id}))); }
         catch (_err) { return status(404, {error: "Could not grant", message: _err}); }
         return { success: true };
@@ -203,7 +203,7 @@ export default function register(app: ApiInstance) {
         const authz = await authorize(context.dbClient, claims, [FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS]);
         if (!authz.some(p => p.identifier === FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.identifier)) return status(403, `Permission denied. Required: ${FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS.functionalPermissionName}`);
 
-        try { await revokeFunctionalPermissionFromGroup(context.dbClient, {identifier: context.params.groupid}, context.body.permissionIdentifiers.map(id => ({identifier: id}))); }
+        try { await revokeFunctionalPermissionFromGroup(context.dbClient, await getLoggedinUserObject(context.dbClient, claims) ?? await getSystemUser(context.dbClient), {identifier: context.params.groupid}, context.body.permissionIdentifiers.map(id => ({identifier: id}))); }
         catch (_err) { return status(404, {error: "Could not revoke", message: _err}); }
         return { success: true };
     }, {

@@ -167,6 +167,7 @@ export default function register(app: ApiInstance) {
         }
 
         const user = await getLoggedinUserObject(context.dbClient, claims);
+        if (!user) return status(403, 'Permission denied. Must be executed by human user');
         const keyLength = await getApiKeyLength(context.dbClient);
         const validityDays = await getApiKeyValidityDays(context.dbClient);
         const expiresAt = new Date(Date.now() + validityDays * 24 * 60 * 60 * 1000);
@@ -254,6 +255,7 @@ export default function register(app: ApiInstance) {
         }
 
         const user = await getLoggedinUserObject(context.dbClient, claims);
+        if (!user) return status(403, 'Permission denied. Must be executed by human user');
         const expiresAt = new Date(Date.now() + context.body.days * 24 * 60 * 60 * 1000);
 
         const updated = await prolongApiKey(context.dbClient, {
@@ -295,6 +297,7 @@ export default function register(app: ApiInstance) {
         }
 
         const user = await getLoggedinUserObject(context.dbClient, claims);
+        if (!user) return status(403, 'Permission denied. Must be executed by human user');
         const updated = await disableApiKey(context.dbClient, {
             apiKeyIdentifier: context.params.apikeyid,
             knownUpdatedAt: context.body.knownUpdatedAt,
@@ -329,6 +332,7 @@ export default function register(app: ApiInstance) {
         }
 
         const user = await getLoggedinUserObject(context.dbClient, claims);
+        if (!user) return status(403, 'Permission denied. Must be executed by human user');
         const ok = await runInTransaction(context.dbClient, async (tx) => {
             return await replaceApiKeyFunctionalPermissions(tx, {
                 apiKeyIdentifier: context.params.apikeyid,

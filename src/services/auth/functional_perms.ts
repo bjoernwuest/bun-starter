@@ -38,3 +38,10 @@ export const FP_CREATE_API_KEYS = await registerFunctionalPermission(getDatabase
 const FP_VIEW_API_KEYS_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_VIEW_API_KEYS, description: "Permitted to view API keys and their details.", group: "Admin" };
 export const FP_VIEW_API_KEYS = await registerFunctionalPermission(getDatabaseConnection(), FP_VIEW_API_KEYS_DEF) satisfies FunctionalPermissionType;
 
+const FP_READ_AUDIT_LOG_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_READ_AUDIT_LOG, description: "Permitted to read the audit log.", group: "Admin" };
+export const FP_READ_AUDIT_LOG = await registerFunctionalPermission(getDatabaseConnection(), FP_READ_AUDIT_LOG_DEF) satisfies FunctionalPermissionType;
+
+const FP_CLEAR_AUDIT_LOG_DEF: NewFunctionalPermissionType = { functionalPermissionName: FunctionalPermissionNames.FP_CLEAR_AUDIT_LOG, description: "Permitted to clear the audit log entries.", group: "Admin" };
+export const FP_CLEAR_AUDIT_LOG = await registerFunctionalPermission(getDatabaseConnection(), FP_CLEAR_AUDIT_LOG_DEF) satisfies FunctionalPermissionType;
+
+export * from "./app_functional_perms.ts";
