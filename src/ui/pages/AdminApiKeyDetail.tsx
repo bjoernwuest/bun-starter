@@ -29,7 +29,7 @@ export const meta: PageMeta = {
     description: "Edit API key metadata, permissions, and lifecycle state.",
     menu: {
         section: "Administration",
-        order: 46,
+        order: 41,
         label: "API key details",
         parent: "admin-api-keys",
         hidden: true,

@@ -8,7 +8,7 @@ export const meta: PageMeta = {
     description: "Start page of the application.",
     menu: {
         section: "General",
-        order: 10,
+        order: 0,
         label: "Dashboard",
     },
 };

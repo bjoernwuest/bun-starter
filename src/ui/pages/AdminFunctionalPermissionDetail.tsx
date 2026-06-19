@@ -20,7 +20,7 @@ export const meta: PageMeta = {
     description: "Read-only functional permission details.",
     menu: {
         section: "Administration",
-        order: 41,
+        order: 31,
         label: "Functional permission details",
         parent: "admin-functional-permissions",
         hidden: true,

@@ -16,7 +16,7 @@ export const meta: PageMeta = {
     description: "Read-only user details.",
     menu: {
         section: "Administration",
-        order: 21,
+        order: 11,
         label: "User details",
         parent: "admin-users",
         hidden: true,

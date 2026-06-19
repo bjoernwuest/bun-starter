@@ -9,7 +9,7 @@ export const meta: PageMeta = {
     description: "Central place for user guides and technical reference.",
     menu: {
         section: "General",
-        order: 20,
+        order: 100,
         label: "Documentation",
     },
 };

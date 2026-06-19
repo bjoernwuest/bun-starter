@@ -10,7 +10,7 @@ export const meta: PageMeta = {
     description: "Interactive API documentation rendered by Scalar.",
     menu: {
         section: "Administration",
-        order: 50,
+        order: 42,
         label: "API documentation",
         parent: "admin-home",
     },

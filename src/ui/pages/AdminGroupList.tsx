@@ -15,7 +15,7 @@ export const meta: PageMeta = {
     description: "Read-only group list and details.",
     menu: {
         section: "Administration",
-        order: 30,
+        order: 20,
         label: "Groups",
         parent: "admin-home",
     },

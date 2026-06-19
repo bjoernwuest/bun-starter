@@ -20,7 +20,7 @@ export const meta: PageMeta = {
     description: "Read-only administration views and permission assignment tools.",
     menu: {
         section: "Administration",
-        order: 10,
+        order: 90,
         label: "Admin",
     },
 };

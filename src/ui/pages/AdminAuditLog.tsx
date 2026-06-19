@@ -16,7 +16,7 @@ export const meta: PageMeta = {
     description: "View and search the audit log of all data-changing events in the system.",
     menu: {
         section: "Administration",
-        order: 50,
+        order: 90,
         label: "Audit Log",
         parent: "admin-home",
     },

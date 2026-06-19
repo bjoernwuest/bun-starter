@@ -25,7 +25,6 @@ import { pageModules as appPageModules } from "@/ui/app_PageRegistry.ts";
  */
 export const pageModules: readonly PageModule[] = [
     { meta: DashboardPage.meta, Component: DashboardPage.Component },
-    { meta: DocPage.meta, Component: DocPage.Component },
     { meta: AdministrationHomePage.meta, Component: AdministrationHomePage.Component },
     { meta: AdminUserListPage.meta, Component: AdminUserListPage.Component },
     { meta: AdminUserDetailPage.meta, Component: AdminUserDetailPage.Component },
@@ -33,12 +32,13 @@ export const pageModules: readonly PageModule[] = [
     { meta: AdminGroupDetailPage.meta, Component: AdminGroupDetailPage.Component },
     { meta: AdminFunctionalPermissionListPage.meta, Component: AdminFunctionalPermissionListPage.Component },
     { meta: AdminFunctionalPermissionDetailPage.meta, Component: AdminFunctionalPermissionDetailPage.Component },
-    { meta: AdminApiDocumentationPage.meta, Component: AdminApiDocumentationPage.Component },
-    { meta: AdminConfigListPage.meta, Component: AdminConfigListPage.Component },
     { meta: AdminApiKeyListPage.meta, Component: AdminApiKeyListPage.Component },
     { meta: AdminApiKeyDetailPage.meta, Component: AdminApiKeyDetailPage.Component },
+    { meta: AdminApiDocumentationPage.meta, Component: AdminApiDocumentationPage.Component },
+    { meta: AdminConfigListPage.meta, Component: AdminConfigListPage.Component },
     { meta: AdminAuditLogPage.meta, Component: AdminAuditLogPage.Component },
-    ...appPageModules
+    { meta: DocPage.meta, Component: DocPage.Component },
+    ...appPageModules,
 ];
 
 /**

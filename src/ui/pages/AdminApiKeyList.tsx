@@ -49,7 +49,7 @@ export const meta: PageMeta = {
     description: "Create, review, and maintain API keys used to authenticate API clients.",
     menu: {
         section: "Administration",
-        order: 45,
+        order: 40,
         label: "API keys",
         parent: "admin-home",
     },
