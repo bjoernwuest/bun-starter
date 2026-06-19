@@ -7,7 +7,6 @@ import { FunctionalPermissionNames as FPN } from "./app_functional_permissions.t
  * preserve maximum type-safety across build targets.
  */
 export const FunctionalPermissionNames = {
-    ...FPN,
     FP_READ_USERS: "FP_READ_USERS",
     FP_READ_GROUPS: "FP_READ_GROUPS",
     FP_READ_GROUP_FUNCTIONAL_PERMISSIONS: "FP_READ_GROUP_FUNCTIONAL_PERMISSIONS",
@@ -22,6 +21,7 @@ export const FunctionalPermissionNames = {
     GRANT_FUNCTIONAL_PERMISSIONS: "Grant functional permissions",
     FP_READ_AUDIT_LOG: "read_audit_log",
     FP_CLEAR_AUDIT_LOG: "clear_audit_log",
+    ...FPN
 } as const;
 
 export type FunctionalPermissionName = (typeof FunctionalPermissionNames)[keyof typeof FunctionalPermissionNames];

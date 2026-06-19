@@ -13,6 +13,7 @@ import * as AdminApiKeyListPage from "./pages/AdminApiKeyList.tsx";
 import * as AdminApiKeyDetailPage from "./pages/AdminApiKeyDetail.tsx";
 import * as AdminAuditLogPage from "./pages/AdminAuditLog.tsx";
 import type { NavGroupItem, NavItem, NavLeafItem, NavSection, PageMeta, PageModule } from "@/ui/types/Page.ts";
+import { pageModules as appPageModules } from "@/ui/app_PageRegistry.ts";
 
 /**
  * Registry of all available pages in the application.
@@ -37,6 +38,7 @@ export const pageModules: readonly PageModule[] = [
     { meta: AdminApiKeyListPage.meta, Component: AdminApiKeyListPage.Component },
     { meta: AdminApiKeyDetailPage.meta, Component: AdminApiKeyDetailPage.Component },
     { meta: AdminAuditLogPage.meta, Component: AdminAuditLogPage.Component },
+    ...appPageModules
 ];
 
 /**
