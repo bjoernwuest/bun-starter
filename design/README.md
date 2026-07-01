@@ -1,1 +1,0 @@
-Architecture and design decisions are here

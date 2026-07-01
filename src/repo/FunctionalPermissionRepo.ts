@@ -1,14 +1,14 @@
 import { type IdentifierType } from "@/types/helpers.ts";
-import type { GroupType, UserType } from "@/types/User.ts";
+import type { Group as GroupType, User as UserType } from "@/types/User.ts";
 import { FunctionalPermission, FunctionalPermissionsOfGroup } from "@/schema/FunctionalPermission.ts";
-import type { NewFunctionalPermissionType } from "@/types/FunctionalPermission.ts";
 import {Group, UserGroup} from "@/schema/User.ts";
-import { type DBClient } from "@/services/database.ts";
 import { devMode } from "@/devmode.ts";
 import { and, eq, inArray, sql } from "drizzle-orm";
-import type {FunctionalPermissionType} from "@/types/FunctionalPermission.ts";
+import type {FunctionalPermission as FunctionalPermissionType, FunctionalPermissionInsert} from "@/types/FunctionalPermission.ts";
 import { isFunctionalPermissionName } from "@/ui/auth/functional_permissions.ts";
-import PubSub from "@/services/pubsub.ts";
+import PubSub from "@/services/PubSub.ts";
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 export const pubsub_FunctionalPermissions = "functional_permissions";
 export const pubsub_FunctionalPermissionGranted = `grant.${pubsub_FunctionalPermissions}`;
@@ -152,7 +152,7 @@ export async function revokeFunctionalPermissionFromGroup(DBClient: DBClient, us
  * @return {Promise<FunctionalPermissionType>} A promise that resolves to the registered or updated functional permission object.
  * @throws {Error} Throws an error if `DBClient` is missing, or `permission` does not contain a valid `functionalPermissionName` field.
  */
-export async function registerFunctionalPermission(DBClient: DBClient, permission: NewFunctionalPermissionType): Promise<FunctionalPermissionType> {
+export async function registerFunctionalPermission(DBClient: DBClient, permission: FunctionalPermissionInsert): Promise<FunctionalPermissionType> {
     try {
         if (!DBClient) throw new Error('DBClient is required');
         if (!permission || typeof permission.functionalPermissionName !== 'string') throw new Error('permission with functionalPermissionName is required');

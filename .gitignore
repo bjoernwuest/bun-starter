@@ -7,3 +7,5 @@
 /package-lock.json
 /TODO.md
 /debug_analysis/
+/src/migrations/*
+!/src/migrations/AGENTS.md

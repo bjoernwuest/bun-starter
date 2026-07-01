@@ -1,4 +1,4 @@
-import type { RequestBundlingClientRuntimeConfig, RequestBundlingMethod, RequestBundlingRequestItem, RequestBundlingResponseItem } from "@/ui/types/RequestBundling.ts";
+import type { RequestBundlingClientRuntimeConfig, RequestBundlingMethod, RequestBundlingRequestItem, RequestBundlingResponseItem } from "@/types/RequestBundling.ts";
 import { ApiError } from "./errors.ts";
 import { triggerLoginRedirect } from "./session.ts";
 

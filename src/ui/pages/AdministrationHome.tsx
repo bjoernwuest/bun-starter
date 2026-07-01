@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiGet } from "@/ui/api/index.ts";
 import {
     FP_MANAGE_CONFIGURATION,

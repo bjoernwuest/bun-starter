@@ -4,12 +4,12 @@ import { Dialog } from "primereact/dialog";
 import { InputText } from "primereact/inputtext";
 import { InputTextarea } from "primereact/inputtextarea";
 import { PageSection, PageTemplate } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import {
     FP_PROLONG_API_KEYS,
     FP_VIEW_API_KEYS,
 } from "@/ui/auth/functional_permissions.ts";
-import type { ApiKeyDetailResponse, FunctionalPermissionsResponse } from "@/ui/types/AdminApi.ts";
+import type { FunctionalPermissionsResponse } from "@/types/Api.ts";
 import { apiGet } from "@/ui/api/index.ts";
 import {
     disableApiKey,
@@ -18,6 +18,7 @@ import {
     replaceApiKeyPermissions,
     updateApiKeyMetadata,
 } from "@/ui/api/ApiKeys.ts";
+import type {ApiKeyDetailResponse} from "@/types/ApiKey.ts";
 
 type ViewerContext = { permissionNames: string[] };
 

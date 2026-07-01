@@ -1,1 +1,0 @@
-Contains client test caes in Playwright (https://playwright.dev/).

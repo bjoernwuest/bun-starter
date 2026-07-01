@@ -12,24 +12,15 @@ import {boolean, jsonb, pgEnum, pgTable, primaryKey, text, varchar } from "drizz
  * - `string[]`: Represents an array of string values.
  * - `number[]`: Represents an array of numeric values.
  */
-export enum configValueTypes {
-    string = 'string',
-    number = 'number',
-    boolean = 'boolean',
-    object = 'object',
-    'string[]' = 'string[]',
-    'number[]' = 'number[]',
+export const ConfigValueTypes = {
+    string: 'string' as const,
+    number: 'number' as const,
+    boolean: 'boolean' as const,
+    object: 'object' as const,
+    'string[]': 'string[]' as const,
+    'number[]': 'number[]' as const,
 }
-
-/**
- * A PostgreSQL enum type representing configuration value types.
- *
- * This variable is initialized using the pgEnum utility to define and register
- * a PostgreSQL enum named 'config_value_types' based on the values provided in
- * the `configValueTypes` object. It ensures that the database schema recognizes
- * this specific set of configuration value types as a legitimate enum type.
- */
-export const pgConfigValueTypes = pgEnum('config_value_types', Object.values(configValueTypes) as [string, ...string[]]);
+export type ConfigValueTypes = typeof ConfigValueTypes[keyof typeof ConfigValueTypes];
 
 /**
  * Represents a configuration entry within a database table.
@@ -65,7 +56,7 @@ export const ConfigEntry = pgTable("config", {
     domain: varchar("domain", { length: 255 }).notNull(),
     key: varchar("key", { length: 255 }).notNull(),
     description: text("description"),
-    type: pgConfigValueTypes("type"),
+    type: text("type").$type<ConfigValueTypes>().notNull(),
     value: jsonb("value"),
     editInUI: boolean("edit_in_ui").notNull().default(true),
     inputFormat: text("input_format").notNull().default(""),

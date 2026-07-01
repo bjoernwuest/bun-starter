@@ -1,47 +1,19 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { FunctionalPermission } from "@/schema/FunctionalPermission.ts";
-import type { FunctionalPermissionName } from "@/ui/auth/functional_permissions.ts";
+// Hier können manuelle Typ-Erweiterungen für FunctionalPermission hinzugefügt werden.
+import { t } from 'elysia';
+import { type Static } from '@sinclair/typebox';
 
-/**
- * Defines the type representation for functional permissions by inferring the
- * select model from the `FunctionalPermission` definition.
- *
- * This type is used to represent the structure and properties expected
- * when working with functional permissions within the system.
- *
- * It leverages the `InferSelectModel` utility to dynamically generate
- * the type based on the `FunctionalPermission` model, ensuring consistency
- * and alignment with the actual database schema or ORM model.
- */
-type DrizzleFunctionalPermissionSelect = InferSelectModel<typeof FunctionalPermission>;
+export * from './_FunctionalPermission';
 
-export type FunctionalPermissionType = Omit<DrizzleFunctionalPermissionSelect, "functionalPermissionName"> & {
-	functionalPermissionName: FunctionalPermissionName;
-};
+// --- TypeBox schemas for route validation and OpenAPI docs ---
 
-/**
- * Represents a TypeScript type for a new functional permission. This type is inferred
- * from the structure of the `FunctionalPermission` model, specifically its insert model.
- * The type is primarily used to define the shape of objects that are being inserted
- * into the `FunctionalPermission` data source.
- *
- * The `InferInsertModel` utility helps to infer the expected format for insert operations,
- * ensuring consistency between the*/
-/**
- * Represents a TypeScript type for a new functional permission. This type is inferred
- * from the structure of the `FunctionalPermission` model, specifically its insert model.
- * The type is primarily used to define the shape of objects that are being inserted
- * into the `FunctionalPermission` data source.
- *
- * The `InferInsertModel` utility helps to infer the expected format for insert operations,
- * ensuring consistency between the type definition and the underlying model.
- *
- * This type is typically used in contexts where validation, transformation, or
- * assignment of new functional permission data is required before persisting it
- * to the database or performing related operations.
- */
-type DrizzleFunctionalPermissionInsert = InferInsertModel<typeof FunctionalPermission>;
+/** Body for assigning groups to a functional permission. */
+export const GroupIdentifiersBodySchema = t.Object({
+    groupIdentifiers: t.Array(t.String({ format: "uuid" })),
+});
+export type GroupIdentifiersBody = Static<typeof GroupIdentifiersBodySchema>;
 
-export type NewFunctionalPermissionType = Omit<DrizzleFunctionalPermissionInsert, "functionalPermissionName"> & {
-	functionalPermissionName: FunctionalPermissionName;
-};
+/** Body for granting/revoking functional permissions on a group. */
+export const PermissionIdentifiersBodySchema = t.Object({
+    permissionIdentifiers: t.Array(t.String({ format: "uuid" })),
+});
+export type PermissionIdentifiersBody = Static<typeof PermissionIdentifiersBodySchema>;

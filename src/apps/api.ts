@@ -1,10 +1,12 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
-import { getCookie, getSession, validateApiKey, validateBearerToken, type ApiKeyAuthContext, type Session } from "@/services/auth.ts";
+import { getCookie, getSession, validateApiKey, validateBearerToken, type ApiKeyAuthContext } from "@/services/Auth.ts";
 import { devMode } from "@/devmode.ts";
-import { type DBClient } from "@/services/database.ts";
 import { createMarkdownFromOpenApi } from "@scalar/openapi-to-markdown";
 import serverTiming from "@elysia/server-timing";
+import type {Session} from "@/types/Auth.ts";
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 if (devMode) console.log("API: ⚡ Start API application...");
 

@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { InputSwitch } from "primereact/inputswitch";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiDelete, apiGet, apiPost } from "@/ui/api/index.ts";
-import type { FunctionalPermissionDetailResponseType, GroupsResponse } from "@/ui/types/AdminApi.ts";
+import type { FunctionalPermissionDetailResponseType, GroupsResponse } from "@/types/Api.ts";
 import {
     FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS,
     FP_READ_FUNCTIONAL_PERMISSIONS,
     FP_READ_GROUPS
 } from "@/ui/auth/functional_permissions.ts";
-import type { GroupType } from "@/ui/types/User.ts";
+import type { Group as GroupType } from "@/types/User.ts";
 
 export const meta: PageMeta = {
     id: "admin-functional-permission-detail",

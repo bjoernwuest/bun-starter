@@ -1,14 +1,16 @@
 import { Elysia } from "elysia";
-import { ClientBundleService } from "@/services/client-builder.ts";
-import { getCookie, getSession } from "@/services/auth.ts";
+import { ClientBundleService } from "@/services/ClientBuilder.ts";
+import { getCookie, getSession } from "@/services/Auth.ts";
 import { devMode } from "@/devmode.ts";
-import type { DBClient } from "@/services/database.ts";
+
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 if (devMode) console.log("UI: ⚡ Start frontend...");
 
 // Initialise the SSE PubSub bridge here (not in main.ts) so it only runs when
 // the UI sub-app is actually mounted.
-await import("@/services/server_sent_events.ts");
+await import("@/services/ServerSentEvents.ts");
 if (devMode) console.log("UI: ...⚡ SSE bridge initialised");
 
 export const app = new Elysia().decorate("dbClient", {} as DBClient);

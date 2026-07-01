@@ -1,8 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
-import { type DBClient } from "@/services/database.ts";
 import { Value } from "@sinclair/typebox/value";
-import { type ConfigEntryType, type NewConfigEntryType, ConfigEntrySchema } from "@/types/ConfigEntry.ts";
-import { ConfigEntry } from "@/schema/schema.ts";
+import { ConfigEntry } from "@/schema/Config.ts";
+import {ConfigEntrySchema, type ConfigEntryType, type NewConfigEntryType} from "@/types/Config.ts";
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 /**
  * Escapes special characters in a string to make it safe for use in regular expressions to PostgreSQL.

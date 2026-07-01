@@ -8,14 +8,13 @@ import { InputText } from "primereact/inputtext";
 import { PageSection, PageTemplate } from "./PageTemplate.tsx";
 import type {
     ConfigDomainGroup,
-    ConfigEntryUI,
-    ConfigUpdateResponse,
-} from "@/ui/types/AdminApi.ts";
-import type { PageMeta } from "@/ui/types/Page.ts";
+} from "@/types/Config.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { getConfigEntries, updateConfigEntry } from "@/ui/api/Config.ts";
 import { ApiError } from "@/ui/api/errors.ts";
 import { FP_MANAGE_CONFIGURATION } from "@/ui/auth/functional_permissions.ts";
 import { subscribe, unsubscribe } from "@/ui/pubsub.ts";
+import type {ConfigEntryUI} from "@/types/Config.ts";
 
 type ValidationResult =
     | { ok: true; parsedValue: unknown }
@@ -223,7 +222,7 @@ function formatArraySummary(entry: ConfigEntryUI): string {
     return JSON.stringify(values);
 }
 
-function mergeUpdatedEntry(groups: ConfigDomainGroup[], updated: ConfigUpdateResponse): ConfigDomainGroup[] {
+function mergeUpdatedEntry(groups: ConfigDomainGroup[], updated: ConfigEntryUI): ConfigDomainGroup[] {
     return groups.map((group) => {
         if (group.domain !== updated.domain) return group;
         return {

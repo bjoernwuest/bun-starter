@@ -1,6 +1,8 @@
-import { ConfigValueTypes, type ConfigEntryType } from "@/types/ConfigEntry.ts";
 import { getConfigEntriesByKey, upsertConfigEntry } from "@/repo/ConfigRepo.ts";
-import { getDatabaseConnection } from "@/services/database.ts";
+import {type DBClient} from "@/services/DatabaseDriver.ts";
+import {type ConfigEntryType, ConfigValueTypes} from "@/types/Config.ts";
+
+const DEFAULT_USER_LIST_PAGE_SIZES = [10, 20, 50] as const;
 
 export const config = {
     cfgUserListPageSizes: {
@@ -8,7 +10,7 @@ export const config = {
         key: "UserListPageSizes",
         description: "Page sizes for user list pagination as number array, e.g. [10, 20, 50].",
         type: ConfigValueTypes["number[]"],
-        value: [10, 20, 50],
+        value: [...DEFAULT_USER_LIST_PAGE_SIZES],
         inputFormat: "^[1-9][0-9]{0,3}$",
         outputFormat: "",
         editInUI: true,
@@ -16,8 +18,20 @@ export const config = {
     } satisfies ConfigEntryType,
 };
 
-const db = await getDatabaseConnection();
-const existing = await getConfigEntriesByKey(db, config.cfgUserListPageSizes.domain, config.cfgUserListPageSizes.key, { limit: 1 });
-if (existing.length < 1) {
-    await upsertConfigEntry(db, config.cfgUserListPageSizes);
+function parsePageSizes(raw: unknown): number[] {
+    if (Array.isArray(raw)) {
+        const parsed = Array.from(new Set(raw
+            .map((value) => (typeof value === "number" ? value : Number(value)))
+            .filter((value) => Number.isInteger(value) && value > 0)));
+        return parsed.length > 0 ? parsed : [...DEFAULT_USER_LIST_PAGE_SIZES];
+    }
+    return [...DEFAULT_USER_LIST_PAGE_SIZES];
+}
+
+export async function getUserListPageSizes(db: DBClient): Promise<number[]> {
+    let entries = await getConfigEntriesByKey(db, config.cfgUserListPageSizes.domain, config.cfgUserListPageSizes.key, { limit: 1 });
+    if (entries.length < 1) {
+        entries = await upsertConfigEntry(db, config.cfgUserListPageSizes);
+    }
+    return parsePageSizes(entries[0]!.value);
 }

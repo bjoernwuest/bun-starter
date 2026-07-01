@@ -1,6 +1,7 @@
 import { AuditEntry } from "@/schema/AuditEntry.ts";
-import type { DBClient } from "@/services/database.ts";
 import { desc, sql, and } from "drizzle-orm";
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 export type AuditEntryType = typeof AuditEntry.$inferSelect;
 export type NewAuditEntryType = typeof AuditEntry.$inferInsert;

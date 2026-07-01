@@ -1,5 +1,5 @@
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import {FP_READ_API_DOCUMENTATION} from "@/ui/auth/functional_permissions.ts";
 
 export const meta: PageMeta = {

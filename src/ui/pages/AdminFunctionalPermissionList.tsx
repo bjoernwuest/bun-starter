@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiGet } from "@/ui/api/index.ts";
 import { FP_READ_FUNCTIONAL_PERMISSIONS } from "@/ui/auth/functional_permissions.ts";
-import type { FunctionalPermissionsResponse } from "@/ui/types/AdminApi.ts";
+import type { FunctionalPermissionsResponse } from "@/types/Api.ts";
 
 export const meta: PageMeta = {
     id: "admin-functional-permissions",

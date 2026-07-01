@@ -1,1 +1,0 @@
-This directory contains automatically created files by drizzle-kit for schema generation, as well as pre- and post-processing files for Umzug.

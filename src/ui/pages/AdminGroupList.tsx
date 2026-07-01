@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { InputSwitch } from "primereact/inputswitch";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiGet } from "@/ui/api/index.ts";
-import type { GroupsResponse } from "@/ui/types/AdminApi.ts";
+import type { GroupsResponse } from "@/types/Api.ts";
 import { FP_READ_GROUPS } from "@/ui/auth/functional_permissions.ts";
 
 export const meta: PageMeta = {

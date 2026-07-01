@@ -4,13 +4,13 @@ import { Dialog } from "primereact/dialog";
 import { InputSwitch } from "primereact/inputswitch";
 import { InputText } from "primereact/inputtext";
 import { PageSection, PageTemplate } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import {
     FP_CREATE_API_KEYS,
     FP_PROLONG_API_KEYS,
     FP_VIEW_API_KEYS,
 } from "@/ui/auth/functional_permissions.ts";
-import type { ApiKeySummary } from "@/ui/types/AdminApi.ts";
+import type { ApiKeySummary } from "@/types/ApiKey.ts";
 import {
     createApiKey,
     disableApiKey,

@@ -1,11 +1,12 @@
-import type { GroupType, NewGroupType, NewUserType, UserType } from "@/types/User.ts";
 import { IdentifierSchema, type IdentifierType } from "@/types/helpers.ts";
 import { Value } from "@sinclair/typebox/value";
 import { User, Group, UserGroup } from "@/schema/User.ts";
+import type { User as UserType, UserInsert, GroupInsert, Group as GroupType } from "@/types/User.ts";
 import { t } from "elysia";
-import { type DBClient } from "@/services/database.ts";
 import { devMode } from "@/devmode.ts";
 import { and, or, eq, inArray, sql } from "drizzle-orm";
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 /**
  * Represents the current system user.
@@ -32,7 +33,7 @@ export async function getSystemUser(db: DBClient): Promise<UserType> {
             firstName: "system",
             lastName: "system",
             email: "system@localhost",
-        } satisfies NewUserType).onConflictDoUpdate({
+        } satisfies UserInsert).onConflictDoUpdate({
             target: User.identifier,
             set: { firstName: "system" }
         }).returning() satisfies UserType[])[0];
@@ -66,10 +67,10 @@ export async function disableUsers(db: DBClient, UserIds: IdentifierType[] = [])
  * Inserts or updates a list of users in the database. If a user with the same identifier already exists, the record is updated; otherwise, a new user is inserted.
  *
  * @param {DBClient} db - The database client used to interact with the database.
- * @param {Array<NewUserType>} Users - An array of user objects to be inserted or updated.
+ * @param {Array<UserInsert>} Users - An array of user objects to be inserted or updated.
  * @return {Promise<{inserted: UserType[], updated: UserType[]}>} An object containing two arrays: `inserted` with newly inserted users and `updated` with users that were updated.
  */
-export async function upsertUsers(db: DBClient, Users: Array<NewUserType | Partial<NewUserType> & Pick<NewUserType, 'identifier'>>): Promise<{inserted: UserType[], updated: UserType[]}> {
+export async function upsertUsers(db: DBClient, Users: Array<UserInsert | Partial<UserInsert> & Pick<UserInsert, 'identifier'>>): Promise<{inserted: UserType[], updated: UserType[]}> {
     if (devMode) console.log("Upserting users...");
     const inserted: UserType[] = [];
     const updated: UserType[] = [];
@@ -80,7 +81,7 @@ export async function upsertUsers(db: DBClient, Users: Array<NewUserType | Parti
             firstName: currentUser.firstName ?? '',
             lastName: currentUser.lastName ?? '',
             email: currentUser.email ?? '',
-        } satisfies NewUserType).onConflictDoUpdate({
+        } satisfies UserInsert).onConflictDoUpdate({
             target: User.identifier,
             set: {
                 firstName: currentUser.firstName ?? sql`${User.firstName}`,
@@ -118,12 +119,12 @@ export async function deleteObsoleteUserGroupAssignments(db: DBClient) {
  * it will be updated; otherwise, it will be inserted as a new record.
  *
  * @param {DBClient} db - The database client used to perform the upsert operations.
- * @param {Array<NewGroupType>} Groups - An array of group objects to be inserted or updated in the database.
+ * @param {Array<GroupInsert>} Groups - An array of group objects to be inserted or updated in the database.
  * @return {Promise<{ inserted: GroupType[], updated: GroupType[] }>} A promise that resolves to an object containing
  *         two arrays: `inserted`, which includes the groups that were newly inserted, and `updated`, which includes
  *         the groups that were updated.
  */
-export async function upsertGroups(db: DBClient, Groups: Array<NewGroupType>): Promise<{ inserted: GroupType[], updated: GroupType[] }> {
+export async function upsertGroups(db: DBClient, Groups: Array<GroupInsert>): Promise<{ inserted: GroupType[], updated: GroupType[] }> {
     if (devMode) console.log("Upserting groups...");
     const inserted: GroupType[] = [];
     const updated: GroupType[] = [];
@@ -132,7 +133,7 @@ export async function upsertGroups(db: DBClient, Groups: Array<NewGroupType>): P
         const returningGroup = (await db.insert(Group).values({
             identifier: currentGroup.identifier,
             groupName: currentGroup.groupName,
-        } satisfies NewGroupType).onConflictDoUpdate({
+        } satisfies GroupInsert).onConflictDoUpdate({
             target: Group.identifier,
             set: {
                 groupName: currentGroup.groupName,

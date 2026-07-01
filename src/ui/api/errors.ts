@@ -1,4 +1,4 @@
-import type { RequestBundlingSignal } from "@/ui/types/RequestBundling.ts";
+import type { RequestBundlingSignal } from "@/types/RequestBundling.ts";
 
 /** Additional metadata attached to `ApiError` instances. */
 export interface ApiErrorOptions {

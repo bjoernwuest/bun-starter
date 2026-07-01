@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiDelete, apiGet, apiPost } from "@/ui/api/index.ts";
-import type { FunctionalPermissionsResponse, GroupFunctionalPermissionResponseType } from "@/ui/types/AdminApi.ts";
+import type { FunctionalPermissionsResponse, GroupFunctionalPermissionResponseType } from "@/types/Api.ts";
 import {
     FP_EDIT_FUNCTIONAL_PERMISSION_ASSIGNMENTS,
     FP_READ_FUNCTIONAL_PERMISSIONS,
     FP_READ_GROUPS
 } from "@/ui/auth/functional_permissions.ts";
-import type { FunctionalPermissionType } from "@/ui/types/FunctionalPermission.ts";
+import type { FunctionalPermission as FunctionalPermissionType } from "@/types/FunctionalPermission.ts";
 
 
 export const meta: PageMeta = {

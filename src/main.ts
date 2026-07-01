@@ -1,6 +1,6 @@
-import { type DBClient, getDatabaseConnection, initDatabase } from "@/services/database.ts";
+import {type DBClient, getDatabaseConnection, initDatabase} from "@/services/DatabaseDriver.ts";
 import { startScheduler as startEntraIDSync } from "@/services/EntraIDSync.ts";
-import { startAuditLog } from "@/services/audit_log.ts";
+import { startAuditLog } from "@/services/AuditLog.ts";
 import { Elysia } from "elysia";
 import { devMode } from "@/devmode.ts";
 
@@ -10,7 +10,7 @@ console.log("...⚡ Initialize database...");
 await initDatabase();
 
 console.log("...⚡ Register functional permissions...");
-await import("@/services/auth/functional_perms.ts");
+await import("@/services/auth/FunctionalPermissions.ts");
 
 console.log("...⚡ Load application modules...");
 const { default: setupApp } = await import("@/apps/setup.ts");
@@ -27,9 +27,6 @@ try {
   await syncState.groupsReady;
 } catch (e) { console.warn("EntraID sync could not start (continuing without it):", e); }
 
-// Start the audit log subscriber (batched PubSub listener)
-console.log("...⚡ Start audit log subscriber...");
-await startAuditLog();
 
 // Start real app
 const app = new Elysia();
@@ -54,6 +51,9 @@ const injectDb = (dbClient: DBClient) => new Elysia({ name: 'db-inject' }).deriv
 const dbClient = await getDatabaseConnection();
 if (devMode) console.log("...💉 Injecting Drizzle database connection");
 app.use(injectDb(dbClient));
+// Start the audit log subscriber (batched PubSub listener)
+console.log("...⚡ Start audit log subscriber...");
+await startAuditLog(dbClient);
 if (devMode) console.log("...⚡ Mount login application...");
 app.use(loginApp);
 if (devMode) console.log("...⚡ Mount API backend...");

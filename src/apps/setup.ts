@@ -1,10 +1,10 @@
-import { getSetupDemand, getSetupKey } from "@/services/setup.ts";
+import { getSetupDemand, getSetupKey } from "@/services/Setup.ts";
 import { Elysia, t } from "elysia";
 import { Value } from "@sinclair/typebox/value";
-import { ClientBundleService } from "@/services/client-builder.ts";
+import { ClientBundleService } from "@/services/ClientBuilder.ts";
 import { upsertConfigEntry } from "@/repo/ConfigRepo.ts";
-import { ConfigValueTypes, type ConfigEntryType, type NewConfigEntryType } from "@/types/ConfigEntry.ts";
-import { getDatabaseConnection, runInTransaction } from "@/services/database.ts";
+import { getDatabaseConnection, runInTransaction } from "@/services/DatabaseDriver.ts";
+import {type ConfigEntryType, ConfigValueTypes, type NewConfigEntryType} from "@/types/Config.ts";
 
 
 const SETUP_HEADER = "x-setup-app";

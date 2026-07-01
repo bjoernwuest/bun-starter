@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, matchPath, NavLink, Navigate, Outlet, Route, Routes, useLocation, useParams } from "react-router-dom";
 import { buildNavTree, getAccessiblePages, getDefaultPath, getPageByUrn, getVisiblePages } from "./PageRegistry.ts";
-import type { NavGroupItem, PageModule } from "@/ui/types/Page.ts";
+import type { NavGroupItem, PageModule } from "@/types/Page.ts";
 import { apiGet } from "@/ui/api/index.ts";
 import type {
     FunctionalPermissionDetailResponseType,
     GroupFunctionalPermissionResponseType,
     UserDetailsResponse
-} from "@/ui/types/AdminApi.ts";
+} from "@/types/Api.ts";
 
 type ViewerContext = {
     user?: {

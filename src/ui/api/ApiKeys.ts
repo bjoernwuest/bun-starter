@@ -1,10 +1,9 @@
 import { apiGet, apiPost, apiPut } from "./index.ts";
+import type {ApiKeyDetailResponse, ApiKeysResponse} from "@/types/ApiKey.ts";
 import type {
-    ApiKeyDetailResponse,
-    ApiKeysResponse,
     CreateApiKeyRequest,
     CreateApiKeyResponse,
-} from "@/ui/types/AdminApi.ts";
+} from "@/types/ApiKey.ts";
 
 export async function getApiKeys(page: number, pageSize: number, includeDisabled: boolean): Promise<ApiKeysResponse> {
     const includeDisabledParam = includeDisabled ? "&includeDisabled=true" : "";

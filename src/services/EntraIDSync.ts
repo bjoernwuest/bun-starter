@@ -1,16 +1,16 @@
 import { getConfigEntriesByKey, upsertConfigEntry } from "@/repo/ConfigRepo.ts";
 import { Value } from "@sinclair/typebox/value";
 import { IdentifierSchema, type IdentifierType } from "@/types/helpers.ts";
-import { ConfigValueTypes, type ConfigEntryType, type NewConfigEntryType } from "@/types/ConfigEntry.ts";
-import type { NewGroupType, NewUserType } from "@/types/User.ts";
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Client } from "@microsoft/microsoft-graph-client";
 import { devMode } from "@/devmode.ts";
-import { type DBClient, getDatabaseConnection, runInTransaction } from "./database.ts";
+import {type DBClient, getDatabaseConnection, runInTransaction} from "./DatabaseDriver.ts";
 import { Cron } from "croner";
 import { countUsersAndGroups, deleteObsoleteUserGroupAssignments, disableGroups, disableUsers, getGroups, getUsers, setGroupMemberships, setUserMemberships, upsertGroups, upsertUsers } from "@/repo/UserRepo.ts";
-import PubSub from "./pubsub.ts";
-import { pubsub_UserAuthLogin } from "./auth.ts";
+import PubSub from "./PubSub.ts";
+import { pubsub_UserAuthLogin } from "./Auth.ts";
+import {type ConfigEntryType, ConfigValueTypes, type NewConfigEntryType} from "@/types/Config.ts";
+import type {GroupInsert, UserInsert} from "@/types/User.ts";
 
 // Config keys (single source of truth)
 const configDomain = "EntraID";
@@ -122,7 +122,7 @@ async function userSync(MSGraphQLClient: Client, DBClient: DBClient): Promise<Id
   if (didFullLoad) await disableUsers(DBClient); else if (0 < deletedIds.size) await disableUsers(DBClient, [...deletedIds]);
 
   // Upsert all groups from newOrUpdated; this may set isActive to false if user acocunt was disabled in EntraID
-  await upsertUsers(DBClient, [...newOrUpdated].map(u => ({ identifier: u.id, firstName: u.givenName ?? '', lastName: u.surname ?? '', email: u.mail || u.userPrincipalName || '', disabled: (u.accountEnabled === false) } satisfies NewUserType)));
+  await upsertUsers(DBClient, [...newOrUpdated].map(u => ({ identifier: u.id, firstName: u.givenName ?? '', lastName: u.surname ?? '', email: u.mail || u.userPrincipalName || '', disabled: (u.accountEnabled === false) } satisfies UserInsert)));
 
   // cleanup obsolete user/group assignments
   await deleteObsoleteUserGroupAssignments(DBClient);
@@ -206,7 +206,7 @@ async function groupSync(MSGraphQLClient: Client, DBClient: DBClient): Promise<I
   if (didFullLoad) await disableGroups(DBClient); else if (0 < deletedIds.size) await disableGroups(DBClient, [...deletedIds]);
 
   // Upsert all groups from newOrUpdated
-  await upsertGroups(DBClient, Array.from(newOrUpdated).map(g => ({ identifier: g.id, groupName: g.displayName ?? '' } satisfies NewGroupType)));
+  await upsertGroups(DBClient, Array.from(newOrUpdated).map(g => ({ identifier: g.id, groupName: g.displayName ?? '' } satisfies GroupInsert)));
 
   // cleanup obsolete user/group assignments
   await deleteObsoleteUserGroupAssignments(DBClient);
@@ -273,7 +273,7 @@ export async function startScheduler(): Promise<StartupSyncState> {
      if (session?.idTokenClaims?.oid) {
        const idTokenClaims = session.idTokenClaims;
        try {
-         await getDatabaseConnection().transaction(async tx => {
+         await runInTransaction(getDatabaseConnection(), async tx => {
            const graphClient = getGraphClient(tx);
            await upsertUsers(tx, [{ identifier: idTokenClaims.oid, firstName: idTokenClaims.given_name ?? '', lastName: idTokenClaims.family_name ?? '', email: idTokenClaims.email || idTokenClaims.preferred_username || '', disabled: false }]);
            // CRITICAL: Sync memberships from Graph API instead of token claims for reliability

@@ -1,8 +1,10 @@
 import { Elysia } from "elysia";
-import { ClientBundleService } from "@/services/client-builder.ts";
-import { buildDeleteCookieHeader, deleteSession, getCookie, getSession, startAuth, finishAuth, logout } from "@/services/auth.ts";
+import { ClientBundleService } from "@/services/ClientBuilder.ts";
+import { buildDeleteCookieHeader, deleteSession, getCookie, getSession, startAuth, finishAuth, logout } from "@/services/Auth.ts";
 import { devMode } from "@/devmode.ts";
-import { type DBClient } from "@/services/database.ts";
+
+
+import type {DBClient} from "@/services/DatabaseDriver.ts";
 
 if (devMode) console.log("Login: ⚡ Start login application...");
 export const app = new Elysia().decorate("dbClient", {} as DBClient);

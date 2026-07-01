@@ -3,9 +3,9 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { InputSwitch } from "primereact/inputswitch";
 import { Chip } from "primereact/chip";
 import { PageTemplate, PageSection } from "./PageTemplate.tsx";
-import type { PageMeta } from "@/ui/types/Page.ts";
+import type { PageMeta } from "@/types/Page.ts";
 import { apiGet } from "@/ui/api/index.ts";
-import type { UserDetailsResponse } from "@/ui/types/AdminApi.ts";
+import type { UserDetailsResponse } from "@/types/Api.ts";
 import { FP_READ_USERS } from "@/ui/auth/functional_permissions.ts";
 
 export const meta: PageMeta = {

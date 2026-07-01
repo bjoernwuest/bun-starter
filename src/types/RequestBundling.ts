@@ -1,3 +1,6 @@
+import { t } from 'elysia';
+import { type Static } from '@sinclair/typebox';
+
 /** HTTP methods supported by request bundling for mutating operations. */
 export type RequestBundlingMethod = "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -62,3 +65,34 @@ export interface RequestBundlingClientRuntimeConfig {
     defaultTimeoutMs: number;
 }
 
+export const FALLBACK_SERVER_FLUSH_MS = 250;
+export const FALLBACK_SERVER_FLUSH_BYTES = 1_024 * 1_024;
+export const FALLBACK_SERVER_FLUSH_COUNT = 10;
+export const FALLBACK_DEFAULT_SERVER_TIMEOUT_MS = 30_000;
+export const FALLBACK_MIN_SERVER_TIMEOUT_MS = 5_000;
+export const FALLBACK_MAX_SERVER_TIMEOUT_MS = 120_000;
+export const FALLBACK_CLIENT_MAX_AGE_MS = 250;
+export const FALLBACK_CLIENT_MAX_BYTES = 1_024 * 1_024;
+export const FALLBACK_CLIENT_MAX_REQUESTS = 10;
+export const FALLBACK_CLIENT_DEFAULT_EXPECTED_PROCESSING_MS = 15_000;
+export const FALLBACK_CLIENT_DEFAULT_TIMEOUT_MS = 45_000;
+
+export interface RequestBundlingServerConfig {
+    flushMs: number;
+    flushBytes: number;
+    flushCount: number;
+    defaultServerTimeoutMs: number;
+    minServerTimeoutMs: number;
+    maxServerTimeoutMs: number;
+}
+
+// --- TypeBox schemas for route validation and OpenAPI docs ---
+
+export const RequestBundlingClientConfigSchema = t.Object({
+    maxAgeMs: t.Number(),
+    maxBytes: t.Number(),
+    maxRequests: t.Number(),
+    defaultExpectedProcessingMs: t.Number(),
+    defaultTimeoutMs: t.Number(),
+});
+export type RequestBundlingClientConfigSchemaType = Static<typeof RequestBundlingClientConfigSchema>;

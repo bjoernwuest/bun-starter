@@ -1,1 +1,0 @@
-Random utility files that are used across the project.

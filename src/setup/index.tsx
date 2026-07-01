@@ -1,6 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { type ConfigEntryType } from "@/types/ConfigEntry.ts";
+import type {ConfigEntryType} from "@/types/Config.ts";
 
 const SETUP_HEADER = "x-setup-app";
 
