@@ -1,6 +1,7 @@
 # Template project for bun-based React web application
 
 To create a new project based on this one:
+```shell
 cd <your project folder, e.g. ~/dev/my-new-project>
 git init
 git remote add upstream https://github.com/bjoernwuest/bun-starter.git
@@ -8,14 +9,17 @@ git fetch upstream
 git merge upstream/master --allow-unrelated-histories -m "Initialize project from bun-starter template"
 git remote add origin https://github.com/<your github login name>/<your repo name>.git
 git push -u origin master
+```
 
 ## Updating from template
 
+```shell
 cd <your project folder, e.g. ~/dev/my-new-project>
 git checkout master
 git fetch upstream
 git merge upstream/master -m "Update from bun-starter template"
 git push origin master
+```
 
 # Needed configuration
 Create a PostgresSQL database with user and password. Enter this information in a file `.env` in your project root:
